@@ -1,0 +1,173 @@
+/* Mini-game overlay. Bright daytime sky, cream panels, ink text. Every class is prefixed ml-mini. */
+.ml-mini {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 16px);
+  box-sizing: border-box;
+  background: linear-gradient(#8fd3ff, #cdeeff);
+  color: #1f2a44;
+  font-family: inherit;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  overflow: hidden;
+}
+.ml-mini__top {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+}
+.ml-mini__title {
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  padding: 6px 14px;
+  background: #fff6dc;
+  border: 2px solid #2b3a55;
+  border-radius: 999px;
+}
+.ml-mini__skip,
+.ml-mini__btn {
+  min-height: 44px;
+  min-width: 44px;
+  border-radius: 12px;
+  font: inherit;
+  font-weight: 700;
+  color: #1f2a44;
+  cursor: pointer;
+}
+.ml-mini__skip {
+  padding: 0 14px;
+  background: #fff6dc;
+  border: 2px solid #2b3a55;
+}
+.ml-mini__btn {
+  padding: 0 22px;
+  background: #ffd85a;
+  border: 2px solid #2b3a55;
+  box-shadow: 0 3px 0 #2b3a55;
+}
+.ml-mini button:focus-visible { outline: 3px solid #ff8a6b; outline-offset: 2px; }
+.ml-mini__canvasWrap {
+  position: relative;
+  width: min(88vw, 36vh);
+}
+.ml-mini__canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 2 / 3;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  border: 3px solid #2b3a55;
+  border-radius: 14px;
+  background: #cdeeff;
+}
+.ml-mini__card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 88%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 18px;
+  background: #fff6dc;
+  border: 3px solid #2b3a55;
+  border-radius: 18px;
+  box-shadow: 0 6px 0 rgba(43, 58, 85, 0.25);
+  text-align: center;
+  animation: ml-mini-pop 200ms ease-out;
+}
+.ml-mini__how,
+.ml-mini__lesson { margin: 0; line-height: 1.5; font-weight: 600; }
+.ml-mini__label { margin: 0; color: #2b3a55; font-size: 13px; font-weight: 700; }
+.ml-mini__score { margin: 0; font-size: 28px; font-weight: 800; color: #1f2a44; }
+.ml-mini__bar,
+.ml-mini__timer {
+  width: 100%;
+  height: 10px;
+  background: #ffffff;
+  border: 2px solid #2b3a55;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.ml-mini__bar-fill,
+.ml-mini__timer-fill {
+  height: 100%;
+  background: #ff8a6b;
+  transition: width 120ms linear;
+}
+.ml-mini__hud {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+}
+.ml-mini__stats {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f2a44;
+}
+.ml-mini__stats span {
+  padding: 4px 10px;
+  background: #fff6dc;
+  border: 2px solid #2b3a55;
+  border-radius: 999px;
+}
+.ml-mini__hold {
+  flex: 1;
+  min-height: 120px;
+  font-size: 20px;
+  background: #7ed07a;
+  border-color: #2b3a55;
+}
+.ml-mini__hold.is-on { background: #b6e88a; box-shadow: inset 0 4px 0 rgba(43, 58, 85, 0.25); }
+.ml-mini__funds { display: flex; flex-direction: column; gap: 10px; }
+.ml-mini__fund {
+  min-height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 6px 14px;
+  background: #fff6dc;
+  color: #1f2a44;
+  border: 2px solid #2b3a55;
+  border-radius: 14px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  animation: ml-mini-slide 220ms ease-out both;
+}
+.ml-mini__fund:disabled { opacity: 0.6; cursor: default; }
+.ml-mini__fund span { font-size: 13px; color: #2b3a55; }
+@keyframes ml-mini-pop {
+  from { transform: translate(-50%, -50%) scale(0.92); opacity: 0; }
+  to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+@keyframes ml-mini-slide {
+  from { transform: translateX(30%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ml-mini *,
+  .ml-mini *::before,
+  .ml-mini *::after { animation: none !important; transition: none !important; }
+}

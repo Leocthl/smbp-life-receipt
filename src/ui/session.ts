@@ -4,6 +4,7 @@ import { newGame } from '../engine/sim';
 import { endTurn } from '../engine/turn';
 import type { ChoiceResult, GameEvent, GameState, Goal, TraitId, TurnSummary } from '../engine/types';
 import { qualities, type Qualities } from '../world3d/qualities';
+import { setCategoryLookup } from '../world3d/descriptor';
 
 /** One decision and what it did to the six qualities (shown on the hexagon and the trail). */
 export interface TrailEntry { turn: number; age: number; eventId: string; choiceId: string; before: Qualities; after: Qualities }
@@ -30,6 +31,7 @@ export interface Session {
 }
 
 export const EVENTS: readonly GameEvent[] = ALL_EVENTS;
+setCategoryLookup((id) => ALL_EVENTS.find((e) => e.id === id)?.category ?? 'daily');
 
 export function startSession(seed: number): Session {
   return { state: newGame(seed), cards: [], index: 0, screen: { kind: 'intro' }, carried: { notices: [], reveals: [] }, trail: [] };

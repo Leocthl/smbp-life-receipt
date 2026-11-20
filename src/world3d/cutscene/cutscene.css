@@ -1,0 +1,103 @@
+/* Cutscene overlay: cream cards, rounded, ink text. All classes are ml-cut-* and live only in this file. */
+.ml-cut {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  font-family: system-ui, -apple-system, 'PingFang HK', 'Noto Sans TC', sans-serif;
+  color: #1f2a44;
+}
+
+.ml-cut-skip {
+  position: absolute;
+  top: calc(14px + env(safe-area-inset-top, 0px));
+  right: 14px;
+  min-width: 64px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 22px;
+  border: 2px solid #2b3a55;
+  background: #fff6dc;
+  color: #1f2a44;
+  font: 800 16px/1 system-ui, sans-serif;
+  box-shadow: 0 3px 0 #2b3a55;
+  cursor: pointer;
+}
+
+.ml-cut-line {
+  position: absolute;
+  left: 50%;
+  bottom: calc(26px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  width: min(92%, 560px);
+  box-sizing: border-box;
+  padding: 14px 18px;
+  border-radius: 18px;
+  border: 2px solid #2b3a55;
+  background: rgba(255, 246, 220, 0.96);
+  box-shadow: 0 4px 0 #2b3a55;
+  font: 700 20px/1.45 system-ui, sans-serif;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 240ms ease-out;
+  pointer-events: none;
+}
+
+.ml-cut-line--on { opacity: 1; }
+
+.ml-cut-hint {
+  position: absolute;
+  left: 50%;
+  top: calc(20px + env(safe-area-inset-top, 0px));
+  transform: translateX(-50%);
+  padding: 6px 12px;
+  border-radius: 14px;
+  background: rgba(255, 246, 220, 0.85);
+  font: 700 14px/1.2 system-ui, sans-serif;
+  animation: ml-cut-hint-out 4s forwards;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+@keyframes ml-cut-hint-out { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
+
+.ml-cut-card {
+  position: absolute;
+  left: 50%;
+  bottom: calc(26px + env(safe-area-inset-bottom, 0px));
+  transform: translate(-50%, 12px);
+  width: min(92%, 440px);
+  box-sizing: border-box;
+  padding: 18px 20px 16px;
+  border-radius: 22px;
+  border: 3px solid #2b3a55;
+  background: #fff6dc;
+  box-shadow: 0 6px 0 #2b3a55;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 260ms ease-out, transform 260ms ease-out;
+  pointer-events: none;
+}
+
+.ml-cut-card--on { opacity: 1; transform: translate(-50%, 0); }
+.ml-cut-card__title { margin: 0; font: 800 26px/1.25 system-ui, sans-serif; }
+.ml-cut-card__sub { margin: 6px 0 0; font: 600 17px/1.45 system-ui, sans-serif; color: #2b3a55; }
+.ml-cut-card__list { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.ml-cut-card__row { display: flex; justify-content: space-between; gap: 12px; padding: 8px 14px; border-radius: 14px; background: #fff; font: 800 20px/1.2 system-ui, sans-serif; }
+.ml-cut-card__row--up { color: #1f7a45; }
+.ml-cut-card__row--down { color: #c2432a; }
+.ml-cut-card__goal { margin: 10px 0 0; font: 700 14px/1.3 system-ui, sans-serif; color: #4f6a8a; }
+
+@media (min-width: 700px) {
+  .ml-cut-line { font-size: 22px; }
+  .ml-cut-card__title { font-size: 30px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ml-cut-line, .ml-cut-card { transition: none; }
+  .ml-cut-hint { animation: none; opacity: 0; }
+}
+
+/* the stage's thumb joystick has no job while a cutscene plays */
+.ml-stage:has(.ml-cut) .ml-stage-joy { display: none; }

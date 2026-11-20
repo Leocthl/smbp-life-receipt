@@ -28,6 +28,9 @@ describe('world descriptor', () => {
     const end = worldFor(playLife(9, 'balanced'));
     expect(end.stage).not.toBe('uni');
     expect(worldKey(end)).not.toBe(worldKey(d0));
+    expect(d0.scope).toBe('room');
+    expect(end.scope).toBe('city');
+    expect(end.mementos.length).toBeGreaterThan(20);
   });
 });
 

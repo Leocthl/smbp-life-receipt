@@ -4,10 +4,12 @@ import { buildEnding, type Moment } from '../../engine/endings';
 import type { GameState, Goal } from '../../engine/types';
 import { NetWorthChart } from '../components/NetWorthChart';
 import { Line, Receipt } from '../components/Receipt';
+import { ICONS } from '../components/sprites';
 import { money } from '../format';
 import { useI18n } from '../i18nContext';
 import { textVars } from './CardScreen';
 import { drawShareCard } from '../shareCard';
+import './screens.css';
 
 const MONEY_VARS = new Set(['amount', 'value', 'diff', 'interest', 'fees', 'loss', 'salary', 'netWorth']);
 
@@ -77,7 +79,7 @@ export function EndingScreen({ state, goal, onAgain }: { state: GameState; goal:
       <p className="ml-ending__ages">{t('ending.age')}</p>
       <p className="ml-ending__label" data-testid="ending-label" data-label={ending.label}>{labelName}</p>
       <p className="ml-ending__desc">{t(`label.${ending.label}.desc`)}</p>
-      <Line label={t('ending.netWorth')} value={money(st.netWorth, lang)} strong />
+      <Line icon={ICONS.gem} label={t('ending.netWorth')} value={money(st.netWorth, lang)} strong />
       <p className="ml-ending__goal" data-testid="ending-goal">{fill(ending.goal.key, ending.goal.vars)}</p>
       {top.length > 0 && (<><h3 className="ml-summary__sub">{t('ending.moments')}</h3><MomentList items={top} state={state} /></>)}
       <div className="ml-ending__actions">

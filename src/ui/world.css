@@ -1,10 +1,38 @@
-/* 3D splat world behind the game */
-.ml-world { position: fixed; inset: 0; z-index: 0; background: #23263a; }
+/* The 3D splat world behind the game, and the shell that lays the HUD and the slip over it. */
+.ml-world { position: fixed; inset: 0; z-index: 0; background: linear-gradient(#8fd3ff, #cdeeff); }
 .ml-world[data-failed] { display: none; }
 .ml-world .ml-world__canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
-body.ml-is-3d { background: #23263a; }
-body.ml-is-3d .ml-app { position: relative; z-index: 1; padding-top: 46vh; }
-body.ml-is-3d .ml-app__bar { position: fixed; top: 8px; right: 12px; z-index: 2; padding: 0; }
+body.ml-is-3d { background: #cdeeff; }
+
+/* the slip slides up from the bottom (phone) or in from the right (desktop) */
+.ml-stage { animation: ml-slide 240ms var(--ml-ease) both; }
+@keyframes ml-slide { from { transform: translateY(28px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+body.ml-is-3d .ml-app { position: static; max-width: none; margin: 0; padding: 0; }
+/* phone: the world shows through the top ~45%; the slip is a bottom sheet that scrolls inside */
+body.ml-is-3d .ml-stage { position: fixed; z-index: 5; left: 0; right: 0; bottom: 0; }
+body.ml-is-3d .ml-receipt { width: min(100%, 520px); margin: 0 auto; max-height: 55vh; }
+body.ml-is-3d .ml-receipt__body { padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+@supports (height: 1dvh) { body.ml-is-3d .ml-receipt { max-height: 55dvh; } }
+
+/* the bar that carries the language button until the Hud takes it over */
+body.ml-is-3d .ml-app__bar { position: fixed; top: 6px; right: 6px; z-index: 7; padding: 0; }
+
+/* start screen: the title floats over the world, the sheet holds the button */
+body.ml-is-3d .ml-stage:has(.ml-start) { top: 0; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; }
+body.ml-is-3d .ml-stage:has(.ml-start) > .ml-logo { padding-top: calc(64px + env(safe-area-inset-top)); }
+body.ml-is-3d .ml-stage:has(.ml-start) > .ml-receipt { pointer-events: auto; }
+
 @media (min-width: 900px) {
-  body.ml-is-3d .ml-app { margin: 0 4vw 0 auto; padding-top: 24px; }
+  .ml-stage { animation-name: ml-slide-x; }
+  @keyframes ml-slide-x { from { transform: translateX(28px); opacity: 0; } to { transform: none; opacity: 1; } }
+  /* desktop: the slip docks on the right at about 420px, the world fills the rest */
+  body.ml-is-3d .ml-stage { left: auto; top: 16px; right: 22px; bottom: 16px; width: 420px; }
+  body.ml-is-3d .ml-receipt { width: 100%; max-height: calc(100dvh - 40px); }
+  body.ml-is-3d .ml-receipt__body { padding-bottom: 20px; }
+  .ml-receipt__handle { display: none; }
+  body.ml-is-3d .ml-app__bar { top: 16px; right: auto; left: 16px; }
+  body.ml-is-3d .ml-stage:has(.ml-start) { top: 16px; left: 22px; width: auto; flex-direction: row; align-items: center; }
+  body.ml-is-3d .ml-stage:has(.ml-start) > .ml-logo { flex: 1; padding: 0 24px 0 0; }
+  body.ml-is-3d .ml-stage:has(.ml-start) > .ml-receipt { width: 420px; flex: none; }
 }

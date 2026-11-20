@@ -1,6 +1,6 @@
 import { netWorth, riskyHoldings } from '../engine/finance';
 import { regimeForTurn } from '../engine/market';
-import type { GameState, Regime } from '../engine/types';
+import type { Category, GameState, Regime, Tag } from '../engine/types';
 import { qualities, type Qualities } from './qualities';
 
 /**
@@ -28,6 +28,25 @@ export interface WorldDescriptor {
   lifestyle: number;
   q: Qualities;
   done: boolean;
+  /** how far the world reaches: it starts as the bedroom and widens as life does */
+  scope: Scope;
+  /** one keepsake per decision, oldest first: the world turns each into a prop (a jar, a plant, a photo, a bill pile…) */
+  mementos: Memento[];
+}
+
+export type Scope = 'room' | 'home' | 'block' | 'district' | 'city';
+export const SCOPES: readonly Scope[] = ['room', 'home', 'block', 'district', 'city'];
+
+export interface Memento {
+  turn: number;
+  age: number;
+  eventId: string;
+  choiceId: string;
+  category: Category;
+  /** the choice's first tag: what kind of decision it was (save, invest, spend, family, debt…) */
+  tag: Tag | 'none';
+  /** net worth change it caused, for sizing the prop */
+  netWorthDelta: number;
 }
 
 export function worldFor(s: GameState): WorldDescriptor {
@@ -51,12 +70,34 @@ export function worldFor(s: GameState): WorldDescriptor {
     lifestyle: Math.max(0, Math.min(1, s.expenses.lifestyle / 15_000)),
     q: qualities(s),
     done: s.done,
+    scope: scopeFor(s),
+    mementos: s.decisionLog.map((e) => ({
+      turn: e.turn, age: e.age, eventId: e.eventId, choiceId: e.choiceId,
+      category: categoryOf(e.eventId), tag: e.tags[0] ?? 'none', netWorthDelta: e.netWorthDelta,
+    })),
   };
+}
+
+/** Category of an event id; injected by the UI layer so this module stays free of the content list. */
+let categoryOf: (eventId: string) => Category = () => 'daily';
+export function setCategoryLookup(fn: (eventId: string) => Category) { categoryOf = fn; }
+
+/**
+ * The world widens with the life: the first decisions happen in the bedroom; working life opens the street; owning,
+ * investing or simply living long enough opens the district and finally the whole harbour.
+ */
+export function scopeFor(s: GameState): Scope {
+  const has = (f: string) => s.flags.includes(f);
+  if (s.done || s.age >= 50 || (has('homeowner') && s.age >= 35)) return 'city';
+  if (s.age >= 32 || has('homeowner') || has('married')) return 'district';
+  if (s.job !== 'student' || has('moved_out')) return 'block';
+  if (s.decisionLog.length >= 4) return 'home';
+  return 'room';
 }
 
 /** Changes only when something visible changes; the stage rebuilds the world when this differs. */
 export function worldKey(d: WorldDescriptor): string {
   const band = (v: number) => Math.round(v / 20);
-  return [d.stage, d.job, d.home, d.partner, d.kids, d.car, d.sideHustle, d.insured, d.burntOut, d.bankrupt, d.regime,
+  return [d.scope, d.mementos.length, d.stage, d.job, d.home, d.partner, d.kids, d.car, d.sideHustle, d.insured, d.burntOut, d.bankrupt, d.regime,
     Math.round(d.invested * 4), Math.round(d.lifestyle * 3), ...Object.values(d.q).map(band), Math.floor(d.age / 10)].join('|');
 }

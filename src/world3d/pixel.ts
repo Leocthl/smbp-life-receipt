@@ -71,7 +71,7 @@ export function createPixelRenderer(container: HTMLElement): PixelRenderer {
   const low = new THREE.Vector2(4, 4);
   const target = new THREE.WebGLRenderTarget(4, 4, { samples: 4, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter });
   const uniforms: Record<string, THREE.IUniform> = {
-    map: { value: target.texture }, lowSize: { value: low }, dither: { value: 0.03 }, vignette: { value: 0.55 },
+    map: { value: target.texture }, lowSize: { value: low }, dither: { value: 0.03 }, vignette: { value: 0.3 },
     palette: { value: PALETTE.map(srgb) }, fade: { value: 0 }, fadeColor: { value: srgb(0x14161f) },
   };
   const material = new THREE.ShaderMaterial({

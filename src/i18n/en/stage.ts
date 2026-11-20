@@ -1,0 +1,14 @@
+export const enStage: Record<string, string> = {
+  'stage.joy.label': 'Joystick: press and drag to walk',
+  'stage.goal.arrived': 'You reached {spot}',
+  'stage.spot.home': 'Home',
+  'stage.spot.office': 'Office',
+  'stage.spot.bank': 'Bank',
+  'stage.spot.market': 'Market',
+  'stage.spot.cafe': 'Cafe',
+  'stage.spot.park': 'Park',
+  'stage.spot.clinic': 'Clinic',
+  'stage.spot.campus': 'Campus',
+  'stage.spot.pier': 'Pier',
+  'stage.error.webgl': 'This device does not support WebGL2, so the 3D scene cannot start.',
+};

@@ -1,0 +1,15 @@
+export const enHex: Record<string, string> = {
+  'hex.q.wealth': 'Wealth',
+  'hex.q.safety': 'Security',
+  'hex.q.joy': 'Joy',
+  'hex.q.bonds': 'Bonds',
+  'hex.q.freedom': 'Freedom',
+  'hex.q.growth': 'Growth',
+  'hex.aria': 'Life shape: {list}',
+  'hex.legend': 'Solid is now, dashed is before',
+  'hex.delta.label': 'Change from this decision',
+  'hex.delta.none': 'No change',
+  'hex.trail.label': 'Every decision',
+  'hex.trail.empty': 'No decisions yet',
+  'hex.trail.age': 'Age {age}',
+};

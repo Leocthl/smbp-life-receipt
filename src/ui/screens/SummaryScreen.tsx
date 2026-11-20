@@ -1,7 +1,11 @@
 import type { GameState, TurnSummary } from '../../engine/types';
+import { PixelIcon } from '../components/PixelIcon';
 import { Line, Receipt } from '../components/Receipt';
+import { ICONS } from '../components/sprites';
+import { WEATHER } from '../components/weather';
 import { ageLabel, money, signed } from '../format';
 import { useI18n } from '../i18nContext';
+import './screens.css';
 
 const NOTICE_KEYS = ['auto_borrow', 'scheme_borrow', 'card_restructure', 'belt_tighten', 'went_without', 'bankrupt', 'mpf_withdrawn', 'forced_sale', 'delayed'];
 
@@ -19,12 +23,15 @@ export function SummaryScreen({ state, summary, onNext }: { state: GameState; su
   return (
     <Receipt testId="summary" className="ml-summary">
       <h2 className="ml-summary__title">{t('summary.title', { age: ageLabel(summary.age) })}</h2>
-      <p className="ml-summary__market" data-regime={summary.regime}>{t('summary.market', { regime: t(`regime.${summary.regime}`) })}</p>
+      <p className="ml-summary__market" data-regime={summary.regime}>
+        <PixelIcon sprite={WEATHER[summary.regime]} scale={3} />
+        <span>{t('summary.market', { regime: t(`regime.${summary.regime}`) })}</span>
+      </p>
       <Line label={t('summary.income')} value={money(summary.income, lang)} />
       <Line label={t('summary.spending')} value={money(-summary.spending, lang)} />
       {/* the rest of the cash movement, so the receipt adds up */}
       {Math.abs(other) > 1 && <Line label={t('summary.other')} value={signed(other, lang)} />}
-      <Line label={t('summary.cashChange')} value={signed(summary.cashChange, lang)} strong tone={summary.cashChange >= 0 ? 'up' : 'down'} />
+      <Line icon={ICONS.coin} label={t('summary.cashChange')} value={signed(summary.cashChange, lang)} strong tone={summary.cashChange >= 0 ? 'up' : 'down'} />
       {/* not cash: fees come out of the investments, interest is added to the debts */}
       {summary.fees > 1 && <Line label={t('summary.fees')} value={money(-summary.fees, lang)} />}
       {summary.interest > 1 && <Line label={t('summary.interest')} value={money(-summary.interest, lang)} />}

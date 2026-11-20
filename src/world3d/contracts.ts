@@ -12,6 +12,8 @@ export interface Spot { id: SpotId; x: number; z: number; /** walking within thi
 /** A round obstacle on the ground plane. */
 export interface Collider { x: number; z: number; r: number }
 
+export interface Framing { viewHeight: number; target: [number, number, number]; yaw: number }
+
 export interface WorldHandle {
   /** add this to the scene */
   group: THREE.Group;
@@ -21,6 +23,13 @@ export interface WorldHandle {
   colliders: Collider[];
   /** half-size of the walkable square, centred on the origin */
   bounds: number;
+  /**
+   * meshes that just appeared (the keepsake of the latest decision); when the scope did not change the stage reveals
+   * only these, so one new prop grows in instead of the whole world re-assembling
+   */
+  fresh?: GaussianMesh[];
+  /** how the camera frames this scope (the bedroom close up, the city wide); the stage tweens to it, no orbiting */
+  framing?: Framing;
   /** sky colour behind everything (hex) */
   sky: number;
   /** per-frame animation (water, weather, lights); t = seconds since mount */
