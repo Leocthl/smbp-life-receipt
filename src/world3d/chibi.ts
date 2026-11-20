@@ -1,19 +1,24 @@
 import { createGaussianBuilder } from './gaussian';
-import { INK } from './materials';
+import { eyesPart as eyes, headBlock, type Face, type Outfit } from './chibiHead';
+import { vbox } from './voxel';
+
+export { EYE_Y, HEAD, type Face, type HairStyle, type Outfit } from './chibiHead';
+export { eyes as eyesPart };
 
 type B = ReturnType<typeof createGaussianBuilder>;
 
-// Chunky people, shared by the hero (avatar.ts), the street's bystanders (world/figure.ts) and the cutscenes. A person is
-// readable at a glance when: the head is about a third of the height, the face is two dark eye dots and a mouth, the outfit
-// is two or three big colour blocks, and the silhouette gets an ink outline from the pixel pass (docs/LOOK_RULES.md rules 10-12).
-// Part drawers take s = 1 for the hero (2.8 tall). Everything is placed relative to the part's own pivot.
+// Blocky voxel-chibi people, shared by the hero (avatar.ts), the street's bystanders (world/figure.ts) and the cutscenes.
+// A person is a cube head (about 40% of the height), a box torso, box arms flush at the shoulders, short box legs and small box
+// hands and feet. Every face is one flat splat, so a person costs about a hundred splats and the light bands land per face
+// (docs/LOOK_RULES.md rule 14). Part drawers take s = 1 for the hero (2.8 tall) and draw around the part's own pivot.
 
 export const HERO_HEIGHT = 2.8;
 export const SKINS = [0xffc29b, 0xe8a77a, 0xa8744a];
+/** the body's rig at s = 1: where the pivots sit */
+export const RIG = { hip: 0.85, neck: 0.85, shoulderX: 0.625, shoulderY: 0.74, legX: 0.23 };
+const TORSO = { w: 0.95, d: 0.6 };
 
-export interface Outfit { top: number; pants: number; shoes: number; hair: number; skin: number }
-
-/** A solid ellipsoid of splats whose count follows its surface, so every size stays gap-free. */
+/** A solid ellipsoid of splats; kept for round props (a bun of bread, a lamp), people are boxes now. */
 export function lump(b: B, cx: number, cy: number, cz: number, rx: number, ry: number, rz: number, color: number | ((x: number, y: number, z: number) => number), spacing: number, o: { fx?: boolean } = {}): void {
   const area = 4 * Math.PI * Math.pow((Math.pow(rx * ry, 1.6) + Math.pow(rx * rz, 1.6) + Math.pow(ry * rz, 1.6)) / 3, 1 / 1.6);
   const count = Math.max(6, Math.round(area / (spacing * spacing)));
@@ -25,54 +30,31 @@ export function dot(b: B, x: number, y: number, z: number, w: number, h: number,
   b.add({ p: [x, y, z], s: [w, h, 0.02], color, opacity: 1, detail: true });
 }
 
-export function legPart(b: B, s: number, o: Outfit, sp: number, patch = false): void {
-  lump(b, 0, -0.46 * s, 0, 0.19 * s, 0.5 * s, 0.19 * s, o.pants, sp);
-  lump(b, 0, -0.88 * s, 0.1 * s, 0.22 * s, 0.12 * s, 0.3 * s, o.shoes, sp);
-  if (patch) lump(b, 0.05 * s, -0.4 * s, 0.17 * s, 0.1 * s, 0.1 * s, 0.04 * s, 0xf2a93a, sp * 0.6);
+/** A leg from the hip pivot down: trousers, then a shoe with its toe forward. */
+export function legPart(b: B, s: number, o: Outfit, _sp: number, patch = false): void {
+  vbox(b, 0, -0.32 * s, 0, 0.4 * s, 0.68 * s, 0.44 * s, o.pants, { skip: ['top', 'bottom'] });
+  vbox(b, 0, -0.75 * s, 0.09 * s, 0.42 * s, 0.2 * s, 0.62 * s, o.shoes);
+  if (patch) vbox(b, 0.05 * s, -0.3 * s, 0.23 * s, 0.2 * s, 0.2 * s, 0.04 * s, 0xf2a93a, { skip: ['bottom', 'back', 'left'] });
 }
 
-export function armPart(b: B, s: number, o: Outfit, sleeve: number, sp: number): void {
-  lump(b, 0, -0.3 * s, 0, 0.14 * s, 0.36 * s, 0.14 * s, sleeve, sp);
-  lump(b, 0, -0.72 * s, 0.02 * s, 0.13 * s, 0.13 * s, 0.13 * s, o.skin, sp);
+/** An arm from the shoulder pivot down: a sleeve block and a small hand block. */
+export function armPart(b: B, s: number, o: Outfit, sleeve: number, _sp: number): void {
+  vbox(b, 0, -0.23 * s, 0, 0.3 * s, 0.58 * s, 0.32 * s, sleeve);
+  vbox(b, 0, -0.62 * s, 0, 0.26 * s, 0.2 * s, 0.26 * s, o.skin);
 }
 
-export function torsoPart(b: B, s: number, o: Outfit, sp: number): void {
-  lump(b, 0, 0.02 * s, 0, 0.42 * s, 0.17 * s, 0.3 * s, o.pants, sp);
-  lump(b, 0, 0.42 * s, 0, 0.48 * s, 0.42 * s, 0.34 * s, o.top, sp);
+/** Belt-height trousers band under a coloured top, on the hip pivot. */
+export function torsoPart(b: B, s: number, o: Outfit, _sp: number): void {
+  vbox(b, 0, 0.1 * s, 0, TORSO.w * s, 0.2 * s, TORSO.d * s, o.pants, { skip: ['top', 'bottom'] });
+  vbox(b, 0, 0.525 * s, 0, TORSO.w * s, 0.65 * s, TORSO.d * s, o.top);
 }
 
-export interface Face { mood: number; eyeBags?: boolean; shades?: boolean; hairStyle?: 'short' | 'thin' | 'bun' }
-
-/** Head about 0.5 tall on a 1.6 body: a third of the height. Eyes, mouth and blush sit on the front (+z). */
-export function headPart(b: B, s: number, o: Outfit, f: Face, sp: number): void {
-  const cy = 0.5 * s;
-  lump(b, 0, cy, 0, 0.5 * s, 0.5 * s, 0.46 * s, o.skin, sp);
-  const hair = f.hairStyle ?? 'short';
-  if (hair === 'thin') lump(b, 0, cy + 0.34 * s, -0.04 * s, 0.54 * s, 0.26 * s, 0.5 * s, o.hair, sp); // the short cap without the fringe (a thin-hair lump z-fought the head)
-  else { lump(b, 0, cy + 0.34 * s, -0.04 * s, 0.54 * s, 0.26 * s, 0.5 * s, o.hair, sp); lump(b, 0, cy + 0.04 * s, -0.18 * s, 0.52 * s, 0.42 * s, 0.34 * s, o.hair, sp); }
-  if (hair !== 'thin') lump(b, 0, cy + 0.3 * s, 0.3 * s, 0.36 * s, 0.1 * s, 0.14 * s, o.hair, sp);
-  if (hair === 'bun') lump(b, 0, cy + 0.72 * s, -0.1 * s, 0.2 * s, 0.2 * s, 0.2 * s, o.hair, sp);
-  lump(b, 0.5 * s, cy - 0.02 * s, 0, 0.07 * s, 0.1 * s, 0.07 * s, o.skin, sp * 0.7);
-  lump(b, -0.5 * s, cy - 0.02 * s, 0, 0.07 * s, 0.1 * s, 0.07 * s, o.skin, sp * 0.7);
-  face(b, s, cy, f, o);
+/** Head on the neck pivot. sp is ignored (kept for the old call shape); k scales the head (kids). */
+export function headPart(b: B, s: number, o: Outfit, f: Face, _sp: number, k = 1): void {
+  headBlock(b, s, o, f, k);
 }
 
-function face(b: B, s: number, cy: number, f: Face, o: Outfit): void {
-  const z = 0.43 * s, eyeY = cy - 0.02 * s, big = s >= 0.8, ex = big ? 0.2 : 0.27;
-  for (const x of [-ex, ex]) {
-    if (!f.shades) {
-      dot(b, x * s, eyeY, z, 0.042 * s, (f.mood < -0.3 ? 0.036 : 0.066) * s, INK);
-      if (big) dot(b, (x - 0.014) * s, eyeY + 0.035 * s, z + 0.01, 0.014 * s, 0.017 * s, 0xffffff);
-    }
-    if (f.eyeBags) dot(b, x * s, eyeY - 0.12 * s, z - 0.02, 0.05 * s, 0.018 * s, 0x8a73e0);
-    if (big) dot(b, x * 1.55 * s, cy - 0.16 * s, z - 0.12 * s, 0.045 * s, 0.028 * s, 0xff9ec4);
-  }
-  if (f.shades) dot(b, 0, eyeY, z + 0.01, 0.23 * s, 0.05 * s, INK);
-  if (s >= 0.75) for (let i = -2; i <= 2; i += 1) dot(b, i * 0.045 * s, cy - 0.26 * s + 0.026 * s * (i * i - 1.5) * f.mood, z - 0.02, 0.026 * s, 0.02 * s, 0xc0453f);
-  if (f.mood < -0.3 || f.eyeBags) for (const x of [-0.2, 0.2]) dot(b, x * s, eyeY + 0.13 * s, z - 0.01, 0.06 * s, 0.016 * s, o.hair);
-}
-
-/** The same builder, with everything shifted: lets the part drawers (made for pivots at the origin) place a whole person. */
+/** The same builder with everything moved by an offset, so the part drawers (made for pivots at the origin) can place a whole person. */
 function shifted(b: B, ox: number, oy: number, oz: number): B {
   return {
     ...b,
@@ -81,17 +63,38 @@ function shifted(b: B, ox: number, oy: number, oz: number): B {
   } as B;
 }
 
-export interface Standing { sit?: boolean; cane?: boolean; pack?: number; hat?: number; face?: Partial<Face>; sleeve?: number }
+export interface Standing { sit?: boolean; cane?: boolean; pack?: number; hat?: number; tie?: number; kid?: boolean; face?: Partial<Face>; sleeve?: number }
+
+function seatedLegs(b: B, x: number, y: number, z: number, s: number, o: Outfit): void {
+  for (const side of [-1, 1]) {
+    const lx = x + side * RIG.legX * s;
+    vbox(b, lx, y + 0.43 * s, z + 0.3 * s, 0.4 * s, 0.38 * s, 0.8 * s, o.pants, { skip: ['bottom'] });
+    vbox(b, lx, y + 0.21 * s, z + 0.55 * s, 0.4 * s, 0.4 * s, 0.34 * s, o.pants, { skip: ['top', 'bottom'] });
+    vbox(b, lx, y + 0.08 * s, z + 0.62 * s, 0.42 * s, 0.16 * s, 0.5 * s, o.shoes);
+  }
+}
+
+function extras(b: B, x: number, y: number, z: number, s: number, hip: number, o: Standing): void {
+  if (o.pack !== undefined) {
+    vbox(b, x, y + hip + 0.42 * s, z - 0.42 * s, 0.8 * s, 0.6 * s, 0.26 * s, o.pack);
+    for (const side of [-1, 1]) vbox(b, x + side * 0.26 * s, y + hip + 0.46 * s, z + 0.31 * s, 0.1 * s, 0.5 * s, 0.04 * s, o.pack, { skip: ['bottom', 'back'] });
+  }
+  if (o.tie !== undefined) vbox(b, x, y + hip + 0.38 * s, z + 0.31 * s, 0.12 * s, 0.4 * s, 0.04 * s, o.tie, { skip: ['bottom', 'back'] });
+  if (o.cane) vbox(b, x + 0.78 * s, y + 0.5 * s, z + 0.1 * s, 0.07 * s, 1.0 * s, 0.07 * s, 0x6f4a32);
+  if (o.hat !== undefined) {
+    const top = y + hip + 0.85 * s + 1.1 * s * (o.kid ? 1.2 : 1);
+    vbox(b, x, top + 0.04 * s, z, 1.4 * s, 0.08 * s, 1.3 * s, o.hat);
+    vbox(b, x, top + 0.18 * s, z, 0.9 * s, 0.2 * s, 0.9 * s, o.hat);
+  }
+}
 
 /** A whole standing (or seated) person with feet at (x, y, z), facing +z; s = 1 is the hero's size. */
 export function standing(b: B, x: number, y: number, z: number, s: number, o: Outfit, opt: Standing = {}): void {
-  const sp = 0.1 + 0.1 * s, hip = (opt.sit ? 0.6 : 0.95) * s, face: Face = { mood: 0.6, ...opt.face };
-  if (!opt.sit) for (const side of [-1, 1]) legPart(shifted(b, x + side * 0.22 * s, y + hip, z), s, o, sp);
-  else for (const side of [-1, 1]) lump(b, x + side * 0.22 * s, y + 0.5 * s, z + 0.3 * s, 0.19 * s, 0.17 * s, 0.4 * s, o.pants, sp);
-  torsoPart(shifted(b, x, y + hip, z), s, o, sp);
-  for (const side of [-1, 1]) armPart(shifted(b, x + side * 0.62 * s, y + hip + 0.68 * s, z), s, o, opt.sleeve ?? o.top, sp);
-  headPart(shifted(b, x, y + hip + 0.86 * s, z), s, o, face, sp);
-  if (opt.pack !== undefined) lump(b, x, y + hip + 0.46 * s, z - 0.42 * s, 0.3 * s, 0.34 * s, 0.16 * s, opt.pack, sp);
-  if (opt.hat !== undefined) lump(b, x, y + hip + 0.86 * s + 0.95 * s, z, 0.56 * s, 0.1 * s, 0.52 * s, opt.hat, sp);
-  if (opt.cane) lump(b, x + 0.78 * s, y + 0.55 * s, z + 0.1 * s, 0.05 * s, 0.55 * s, 0.05 * s, 0x6f4a32, sp * 0.7);
+  const hip = (opt.sit ? 0.62 : RIG.hip) * s, face: Face = { mood: 0.6, ...opt.face }, k = opt.kid ? 1.2 : 1;
+  if (opt.sit) seatedLegs(b, x, y, z, s, o);
+  else for (const side of [-1, 1]) legPart(shifted(b, x + side * RIG.legX * s, y + hip, z), s, o, 0);
+  torsoPart(shifted(b, x, y + hip, z), s, o, 0);
+  for (const side of [-1, 1]) armPart(shifted(b, x + side * RIG.shoulderX * s, y + hip + RIG.shoulderY * s, z), s, o, opt.sleeve ?? o.top, 0);
+  headPart(shifted(b, x, y + hip + RIG.neck * s, z), s, o, face, 0, k);
+  extras(b, x, y, z, s, hip, opt);
 }

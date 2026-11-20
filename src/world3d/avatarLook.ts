@@ -3,7 +3,7 @@ import type { WorldDescriptor } from './descriptor';
 /** What the character wears, worked out from the descriptor. Pure. */
 export interface AvatarLook {
   top: number; sleeve: number; pants: number; shoes: number; hair: number; skin: number;
-  hairStyle: 'short' | 'thin' | 'bun';
+  hairStyle: 'short' | 'thin' | 'bun' | 'bob' | 'tail';
   hood: boolean; backpack: number | null; tie: number | null; cardigan: boolean; gold: boolean; shades: boolean; blazer: number | null;
   patches: boolean; eyeBags: boolean; cane: boolean;
   /** forward lean of the torso, radians */
@@ -24,7 +24,7 @@ export function lookFor(d: WorldDescriptor, seed: number): AvatarLook {
   const rich = d.lifestyle;
   const dark = (d.burntOut ? 0.62 : 1) * (d.bankrupt ? 0.8 : 1);
   const skin = [0xffc29b, 0xe8a77a, 0xa8744a][Math.abs(seed) % 3];
-  let top = 0x4cc3d9, pants = 0x2b3a55, hair = 0x2b3a55;
+  let top = 0x4cc3d9, pants = 0x2b3a55, hair = 0x4f3426;
   if (young) { top = 0xffd85a; pants = 0x3d7fc4; }
   else if (old) { top = 0xd9a874; pants = 0x6b789c; hair = 0xc9d3e6; }
   else if (mid) { top = 0xb9a7ff; hair = 0xc9d3e6; }
@@ -39,7 +39,7 @@ export function lookFor(d: WorldDescriptor, seed: number): AvatarLook {
     cardigan: old, gold: rich > 0.4, shades: rich > 0.75, blazer: blazer === null ? null : dim(blazer, dark),
     patches: d.bankrupt, eyeBags: d.burntOut, cane: old,
     slouch: Math.min(0.5, slouch),
-    mood: Math.max(-1, Math.min(1, (d.q.joy - 50) / 40 - (d.burntOut ? 0.6 : 0))),
+    mood: Math.max(-1, Math.min(1, (d.q.joy - 50) / 40 - (d.burntOut ? 0.6 : 0) - (d.bankrupt ? 0.5 : 0))),
     vigor: 0.7 + d.q.joy / 160,
   };
 }
