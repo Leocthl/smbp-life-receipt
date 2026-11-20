@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Lang } from '../i18n';
 import type { StageApi } from '../world3d/contracts';
-import { StatsTape } from './components/StatsTape';
 import { resolveWithMini } from './director/choice';
 import { useCutscenes } from './director/useCutscenes';
 import { isFasting, useFast } from './director/useFast';
@@ -94,15 +93,9 @@ export function App() {
   return (
     <I18nProvider value={i18n}>
       {is3d && <WorldBackdrop state={session?.state ?? null} lang={lang} onStage={setStage} />}
-      {is3d && !cutting && <Hud state={playing?.state} hexSlot={playing && <HexButton session={playing} />} onLang={toggleLang} />}
+      {!cutting && <Hud state={playing?.state} hexSlot={playing && <HexButton session={playing} />} onLang={toggleLang} />}
       {walk.spot && <WalkPrompt spot={walk.spot} onSkip={walk.skip} />}
       <div className="ml-app">
-        {!is3d && (
-          <div className="ml-app__bar">
-            <button type="button" className="ml-lang" data-testid="lang" onClick={toggleLang}>{i18n.t('app.lang')}</button>
-          </div>
-        )}
-        {!is3d && playing && <StatsTape state={playing.state} />}
         <main className="ml-stage" key={slipKey} data-slip={slipKey} ref={stageRef} tabIndex={-1} hidden={away}>
           {!away && screen.kind === 'start' && <StartScreen seed={seed} onStart={() => setSession(startSession(seed))} />}
           {!away && session && screen.kind === 'intro' && <IntroScreen state={session.state} onGo={() => setSession(beginTurn(session))} />}

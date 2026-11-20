@@ -3,8 +3,8 @@ import { newGame } from '../engine/sim';
 import type { GameState } from '../engine/types';
 import { translate, type Lang } from '../i18n';
 import type { StageApi } from '../world3d/contracts';
-import { worldFor } from '../world3d/descriptor';
 import { createStage } from '../world3d/stage';
+import { worldView } from './flow';
 import './world.css';
 
 let stub: GameState | null = null;
@@ -27,7 +27,7 @@ export function WorldBackdrop({ state, lang, onStage }: Props) {
     if (!el) return undefined;
     let made: StageApi;
     try {
-      made = createStage(el, worldFor(latest.current.state ?? preview()), seed, { lang: latest.current.lang });
+      made = createStage(el, worldView(latest.current.state ?? preview()), seed, { lang: latest.current.lang });
     } catch {
       setFailed(true); // no WebGL2 (or the context failed): the game still plays, on the plain backdrop
       return undefined;
@@ -44,7 +44,7 @@ export function WorldBackdrop({ state, lang, onStage }: Props) {
     };
   }, [seed, onStage]);
 
-  useEffect(() => { stage?.setWorld(worldFor(state ?? preview())); }, [stage, state]);
+  useEffect(() => { stage?.setWorld(worldView(state ?? preview())); }, [stage, state]);
 
   useEffect(() => {
     host.current?.querySelector('.ml-stage-joy')?.setAttribute('aria-label', translate(lang, 'stage.joy.label'));

@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { ALL_EVENTS } from '../src/data/events';
 import { availableChoices } from '../src/engine/events';
 import { newGame } from '../src/engine/sim';
-import { MINI_COOLDOWN, SPOT_FOR_CATEGORY, pickMiniGame, walkTarget, type MiniContext } from '../src/ui/flow';
+import { regimeForTurn, yearIndex } from '../src/engine/market';
+import { MINI_COOLDOWN, SPOT_FOR_CATEGORY, pickMiniGame, shownRegime, walkTarget, type MiniContext } from '../src/ui/flow';
 import { advance, afterSummary, applyMiniScore, beginTurn, choose, currentEvent, rememberMini, startSession, withMiniBonus, type Session } from '../src/ui/session';
 import { resolveWithMini } from '../src/ui/director/choice';
 import { qualities } from '../src/world3d/qualities';
@@ -112,3 +113,17 @@ function firstChoice(s: Session): Session {
   return choose(s, availableChoices(s.state, currentEvent(s.screen.card))[0].id);
 }
 
+
+describe('market weather spoiler', () => {
+  it('shows last year\'s regime, never the current one, and the same one all year', () => {
+    const s = newGame(5);
+    expect(shownRegime({ ...s, turn: 0 })).toBe('normal');
+    expect(shownRegime({ ...s, turn: 1 })).toBe('normal');
+    for (let turn = 2; turn < 30; turn += 1) {
+      const y = yearIndex(turn);
+      const prevYearTurn = [...Array(turn).keys()].reverse().find((x) => yearIndex(x) === y - 1) as number;
+      expect(shownRegime({ ...s, turn })).toBe(regimeForTurn(s.market, prevYearTurn));
+      if (yearIndex(turn - 1) === y) expect(shownRegime({ ...s, turn })).toBe(shownRegime({ ...s, turn: turn - 1 }));
+    }
+  });
+});

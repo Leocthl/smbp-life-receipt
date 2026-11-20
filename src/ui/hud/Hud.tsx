@@ -1,11 +1,11 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { runway, netWorth } from '../../engine/finance';
-import { regimeForTurn } from '../../engine/market';
 import type { GameState } from '../../engine/types';
 import { PixelIcon } from '../components/PixelIcon';
 import { ICONS, type Sprite } from '../components/sprites';
 import { WEATHER } from '../components/weather';
 import { ageLabel, money } from '../format';
+import { shownRegime } from '../flow';
 import { useI18n } from '../i18nContext';
 import './hud.css';
 
@@ -59,7 +59,7 @@ export function Hud({ state, hexSlot, onLang }: { state?: GameState | null; hexS
   const { t, lang } = useI18n();
   if (!state) return onLang ? <div className="ml-hud ml-hud--bare"><LangButton onLang={onLang} /></div> : null;
   const rw = runway(state);
-  const regime = regimeForTurn(state.market, Math.min(state.turn, state.market.levels.cash.length - 1));
+  const regime = shownRegime(state); // last year's weather: this year's is a spoiler until the year-end receipt
   const weather = t(`hud.weather.${regime}`);
   return (
     <header className={`ml-hud${onLang ? '' : ' ml-hud--nolang'}`} aria-label={t('tape.label')}>
