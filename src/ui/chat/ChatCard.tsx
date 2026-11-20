@@ -45,7 +45,7 @@ export function ChatCard({ state, card, onChoose }: { state: GameState; card: Ca
   );
 
   return (
-    <ChatFrame testId="card" emote={emote} emoteKey={Math.min(stage, 2)} talking={talking} term={termLabel(state, t)} footer={footer} onSkip={() => setSkip((n) => n + 1)}>
+    <ChatFrame testId="card" emote={emote} emoteKey={Math.min(stage, 2)} talking={talking} term={termLabel(state, t)} peek={t(textKey, vars)} fit footer={footer} onSkip={() => setSkip((n) => n + 1)}>
       <MascotBubble key={`i${card.eventId}`} name={t('mascot.name')} text={t(introKey(ev.speaker, ev.id), vars)} skipTick={skip} onTyping={setTalking} onDone={after(0)} />
       {stage >= 1 && (
         <SpeakerBubble speaker={ev.speaker} name={t(`speaker.${ev.speaker}`)} testId="card-text">

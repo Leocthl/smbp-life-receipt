@@ -12,9 +12,9 @@ body.ml-is-3d { background: #cdeeff; }
 body.ml-is-3d .ml-app { position: static; max-width: none; margin: 0; padding: 0; }
 /* phone: the world shows through the top ~45%; the slip is a bottom sheet that scrolls inside */
 body.ml-is-3d .ml-stage { position: fixed; z-index: 5; left: 0; right: 0; bottom: 0; }
-body.ml-is-3d .ml-receipt { width: min(100%, 520px); margin: 0 auto; max-height: 55vh; }
-body.ml-is-3d .ml-receipt__body { padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
-@supports (height: 1dvh) { body.ml-is-3d .ml-receipt { max-height: 55dvh; } }
+/* the sheet (sheet.css) sets the stage's height; the receipt fills it and its body scrolls */
+body.ml-is-3d .ml-receipt { width: min(100%, 520px); margin: 0 auto; }
+body.ml-is-3d .ml-receipt__body { padding-bottom: 20px; }
 
 /* the bar that carries the language button until the Hud takes it over */
 body.ml-is-3d .ml-app__bar { position: fixed; top: 6px; right: 6px; z-index: 7; padding: 0; }
@@ -28,12 +28,12 @@ body.ml-is-3d .ml-stage:has(.ml-start) > .ml-receipt { pointer-events: auto; }
   .ml-stage { animation-name: ml-slide-x; }
   @keyframes ml-slide-x { from { transform: translateX(28px); opacity: 0; } to { transform: none; opacity: 1; } }
   /* desktop: the slip docks on the right at about 420px, the world fills the rest */
-  body.ml-is-3d .ml-stage { left: auto; top: 16px; right: 22px; bottom: 16px; width: 420px; }
-  body.ml-is-3d .ml-receipt { width: 100%; max-height: calc(100dvh - 40px); }
+  body.ml-is-3d .ml-stage { left: auto; top: 12px; right: 22px; bottom: auto; width: 440px; max-height: calc(100dvh - 24px); display: flex; flex-direction: column; }
+  body.ml-is-3d .ml-receipt { width: 100%; flex: 0 1 auto; min-height: 0; max-height: 100%; }
   body.ml-is-3d .ml-receipt__body { padding-bottom: 20px; }
   .ml-receipt__handle { display: none; }
   body.ml-is-3d .ml-app__bar { top: 16px; right: auto; left: 16px; }
-  body.ml-is-3d .ml-stage:has(.ml-start) { top: 16px; left: 22px; width: auto; flex-direction: row; align-items: center; }
+  body.ml-is-3d .ml-stage:has(.ml-start) { top: 16px; bottom: 16px; left: 22px; width: auto; max-height: none; flex-direction: row; align-items: center; }
   body.ml-is-3d .ml-stage:has(.ml-start) > .ml-logo { flex: 1; padding: 0 24px 0 0; }
   body.ml-is-3d .ml-stage:has(.ml-start) > .ml-receipt { width: 420px; flex: none; }
 }

@@ -4,8 +4,9 @@ import { enEvents } from './events';
 import { enFlow } from './flow';
 import { enHex } from './hex';
 import { enMascot } from './mascot';
+import { enLayout } from './layout';
 import { enMini } from './mini';
 import { enStage } from './stage';
 import { enUi } from './ui';
 
-export const en: Record<string, string> = { ...enUi, ...enEndings, ...enEvents, ...enHex, ...enStage, ...enMini, ...enMascot, ...enCutscene, ...enFlow };
+export const en: Record<string, string> = { ...enUi, ...enEndings, ...enEvents, ...enHex, ...enStage, ...enMini, ...enMascot, ...enCutscene, ...enFlow, ...enLayout };

@@ -1,7 +1,11 @@
 .ml-stage3d {
   position: fixed;
-  inset: 0;
+  inset: 0 0 auto 0;
+  height: 100%;
+  /* the large viewport: the phone's URL bar sliding in and out never resizes the picture (that read as shaking) */
+  height: 100lvh;
   overflow: hidden;
+  overscroll-behavior: none;
   background: #8fd3ff;
   touch-action: none;
   user-select: none;
@@ -30,8 +34,9 @@
   touch-action: none;
 }
 
+/* only while the player may walk (stage.setControls); a card or a film has no use for it */
 @media (pointer: coarse) {
-  .ml-stage-joy { display: block; }
+  .ml-stage3d--walk .ml-stage-joy { display: block; }
 }
 
 .ml-stage-joy__knob {

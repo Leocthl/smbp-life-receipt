@@ -22,6 +22,13 @@ const LEASH = 0.3; // camera may follow the avatar within this fraction of the f
 const TAP_REACH = 0.12;
 const MAX_DT = 0.05;
 const RING_SPLATS = 36;
+const MIN_FRAME_ASPECT = 1; // portrait screens widen the view so the room is not cropped to a sliver
+const DEADZONE = 0.12; // the camera ignores avatar moves this close to the framing's centre (fraction of its view height)
+const SETTLE = 0.002; // closer than this to where it is going, the camera just arrives (no endless tiny moves)
+const INSET_RATE = 9; // how fast the camera re-centres when a bottom sheet moves
+const RESIZE_MS = 120; // wait for the browser UI (URL bar, rotation) to stop moving before rebuilding the render targets
+/** Event the bottom sheet fires with the pixels it covers at the bottom (and the HUD at the top): detail { bottom, top, right } (right: a side panel on desktop). */
+export const INSET_EVENT = 'ml-inset';
 
 // Daytime palette, swapped in over pixel.ts's night palette. The shader array is fixed-size, so the length must match.
 
@@ -62,7 +69,7 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
   const lang = opts.lang ?? 'zh';
   if (!supportsWebGL2()) throw new Error(translate(lang, 'stage.error.webgl'));
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  container.classList.add('ml-stage3d');
+  container.classList.add('ml-stage3d', 'ml-stage3d--walk'); // walking is on until setControls says otherwise
 
   const px = createPixelRenderer(container);
   px.uniforms.vignette.value = 0.12; // daytime: keep the picture bright to the corners
@@ -96,6 +103,9 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
   let raf = 0;
   let disposed = false;
   let tasks: Task[] = [];
+  let frameDone = false; // the framing tween has arrived; from then on only follow() may move the camera
+  let boxW = container.clientWidth, boxH = container.clientHeight;
+  let sheetInset = 0, insetNow = 0, dockInset = 0, dockNow = 0; // dock: px the side panel covers on the right (desktop) // px the sheet covers at the bottom minus what the HUD covers at the top: wanted / currently applied
 
   function snapshot(): Frame {
     return { vh: cam.state.viewHeight, x: cam.target.x, y: cam.target.y, z: cam.target.z, yaw: cam.state.yaw };
@@ -158,14 +168,18 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
     g.reject(new Error('stage: goal cancelled'));
   }
 
-  /** Eases the camera to the current framing. Returns true while it is still moving. */
+  /** A tall, narrow screen would crop the room to a sliver: zoom out until the view is at least MIN_FRAME_ASPECT wide. */
+  const widen = (vh: number) => vh * Math.max(1, MIN_FRAME_ASPECT / (boxW / Math.max(1, boxH)));
+
+  /** Eases the camera to the current framing. Returns true while it is still moving; once it has arrived it is left alone. */
   function applyFrame(): boolean {
-    if (hold) return false;
+    if (hold || frameDone) return false;
     const k = reduced ? 1 : smooth(clamp01((t - frameAt) / FRAME_SECONDS));
     cam.state.viewHeight = lerp(frameFrom.vh, frameTo.vh, k);
     cam.state.yaw = lerp(frameFrom.yaw, frameTo.yaw, k);
     cam.target.set(lerp(frameFrom.x, frameTo.x, k), lerp(frameFrom.y, frameTo.y, k), lerp(frameFrom.z, frameTo.z, k));
-    return k < 1;
+    frameDone = k >= 1;
+    return !frameDone;
   }
 
   /** Tweens to a world's framing (or the default view). Instant when asked, or under reduced motion. */
@@ -173,18 +187,41 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
     const f = w.framing;
     framing = f ? { vh: f.viewHeight, x: f.target[0], y: f.target[1], z: f.target[2], yaw: f.yaw } : null;
     frameFrom = snapshot();
-    frameTo = framing ?? { vh: VIEW_HEIGHT, x: cam.target.x, y: cam.target.y, z: cam.target.z, yaw: DEFAULT_YAW };
+    frameTo = framing ? { ...framing, vh: widen(framing.vh) } : { vh: widen(VIEW_HEIGHT), x: cam.target.x, y: cam.target.y, z: cam.target.z, yaw: DEFAULT_YAW };
     frameAt = instant || reduced ? t - FRAME_SECONDS : t;
+    frameDone = false;
   }
 
+  /** Moves a value toward where it is going; the last sliver is closed in one step so an idle camera is perfectly still. */
+  const approach = (cur: number, want: number, k: number) => (Math.abs(want - cur) < SETTLE ? want : cur + (want - cur) * k);
+  /** How far past the dead zone a move is, signed and capped at the leash. */
+  const beyond = (d: number, dead: number, leash: number) => Math.sign(d) * Math.min(Math.max(0, Math.abs(d) - dead), leash - dead);
+
+  /** The camera shadows the avatar only once it leaves a dead zone round the framing's centre, and never by more than the leash. */
   function follow(dt: number) {
     if (hold) return;
     const k = 1 - Math.exp(-dt * CAM_RATE), b = world.bounds;
-    const cx = framing?.x ?? 0, cz = framing?.z ?? 0, leash = framing ? framing.vh * LEASH : Infinity;
-    const tx = within(within(pos.x, cx, leash), 0, b), tz = within(within(pos.z, cz, leash), 0, b);
-    cam.target.x += (tx - cam.target.x) * k;
-    cam.target.z += (tz - cam.target.z) * k;
-    cam.target.y += (avatar.height * 0.5 - cam.target.y) * k;
+    const cx = framing?.x ?? 0, cz = framing?.z ?? 0;
+    const leash = framing ? framing.vh * LEASH : Infinity, dead = framing ? framing.vh * DEADZONE : 0;
+    const tx = within(cx + beyond(pos.x - cx, dead, leash), 0, b), tz = within(cz + beyond(pos.z - cz, dead, leash), 0, b);
+    cam.target.x = approach(cam.target.x, tx, k);
+    cam.target.z = approach(cam.target.z, tz, k);
+    if (!framing) cam.target.y = approach(cam.target.y, avatar.height * 0.5, k);
+  }
+
+  /** Slides the picture up by half the covered strip (in whole art pixels) so the room sits in the free area above the sheet. */
+  function applyInset(dt: number) {
+    const hidden = Math.max(0, boxH - window.innerHeight); // the part of a large-viewport canvas the browser bars cover
+    const want = boxH > 0 ? sheetInset + hidden : 0; // negative: the HUD covers more than the sheet, so the room slides down
+    const k = 1 - Math.exp(-dt * INSET_RATE);
+    insetNow = reduced ? want : approach(insetNow, want, k);
+    dockNow = reduced ? dockInset : approach(dockNow, dockInset, k);
+    if (insetNow === 0 && dockNow === 0) return;
+    const c = cam.camera, texel = cam.state.viewHeight / px.low.y;
+    const snapped = (px: number, span: number, whole: number) => Math.round(((px / 2 / whole) * span) / texel) * texel;
+    const down = snapped(insetNow, cam.state.viewHeight, boxH), left = snapped(dockNow, c.right - c.left, boxW);
+    c.top -= down; c.bottom -= down; c.left += left; c.right += left;
+    c.updateProjectionMatrix();
   }
 
   function tick(dt: number) {
@@ -201,6 +238,7 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
     checkGoal();
     if (!applyFrame()) follow(dt);
     cam.update(px.low.x / px.low.y, px.low.y);
+    applyInset(dt);
     syncMeshes();
   }
 
@@ -245,7 +283,21 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
 
   setFraming(world, true);
   cam.target.set(pos.x, avatar.height * 0.5, pos.z);
-  const onResize = () => px.resize();
+  let resizeTimer = 0;
+  /** Rebuild the render targets only when the box really changed, and only once the browser UI has stopped moving. */
+  const applySize = () => {
+    if (disposed || (container.clientWidth === boxW && container.clientHeight === boxH)) return;
+    boxW = container.clientWidth; boxH = container.clientHeight;
+    px.resize();
+    setFraming(world, true);
+  };
+  const onResize = () => { window.clearTimeout(resizeTimer); resizeTimer = window.setTimeout(applySize, RESIZE_MS); };
+  const onInset = (e: Event) => {
+    const d = (e as CustomEvent<{ bottom?: number; top?: number; right?: number }>).detail;
+    sheetInset = Math.max(0, d?.bottom ?? 0) - Math.max(0, d?.top ?? 0);
+    dockInset = Math.max(0, d?.right ?? 0);
+  };
+  window.addEventListener(INSET_EVENT, onInset);
   const ro = new ResizeObserver(onResize);
   ro.observe(container);
   raf = requestAnimationFrame(frame);
@@ -275,6 +327,7 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
     world: () => d,
     setControls(on) {
       enabled = on;
+      container.classList.toggle('ml-stage3d--walk', on);
       ctl.setEnabled(on);
       if (!on) tap = null;
     },
@@ -285,7 +338,7 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
       return new Promise<void>((resolve, reject) => { goal = { id, resolve, reject }; });
     },
     clearGoal: cancelGoal,
-    camera: () => ({ cam: cam.camera, state: cam.state, target: cam.target, hold(on: boolean) { hold = on; } }),
+    camera: () => ({ cam: cam.camera, state: cam.state, target: cam.target, hold(on: boolean) { hold = on; if (!on) setFraming(world, false); } }),
     scene,
     avatar: () => avatar,
     animate: (step) => addTask(step),
@@ -306,6 +359,8 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
       disposed = true;
       cancelAnimationFrame(raf);
       ro.disconnect();
+      window.clearTimeout(resizeTimer);
+      window.removeEventListener(INSET_EVENT, onInset);
       ctl.dispose();
       joy.dispose();
       cancelGoal();

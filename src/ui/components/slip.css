@@ -2,7 +2,8 @@
 
 .ml-pix { display: block; flex: none; image-rendering: pixelated; }
 
-.ml-receipt { position: relative; display: flex; flex-direction: column; min-height: 0; }
+/* 3px side padding: the edge below reaches out over it, so nothing sticks out of the receipt's own box */
+.ml-receipt { position: relative; display: flex; flex-direction: column; min-height: 0; padding: 0 3px; }
 .ml-receipt__edge--top {
   position: relative; z-index: 1; flex: none; height: 28px; margin: 0 -3px;
   background-image:
@@ -73,7 +74,7 @@
 .ml-price::before { content: ""; position: absolute; left: 5px; top: 50%; width: 4px; height: 4px; margin-top: -2px; background: var(--ml-ink); }
 
 /* the main action stays in reach at the bottom of a scrolling sheet */
-.ml-receipt__body > .ml-btn--primary { position: sticky; z-index: 3; bottom: calc(10px + env(safe-area-inset-bottom)); --ml-ring: 0 6px 0 8px var(--ml-paper); }
+.ml-receipt__body > .ml-btn--primary { position: sticky; z-index: 3; bottom: calc(10px + env(safe-area-inset-bottom)); --ml-ring: 0 8px 0 10px var(--ml-paper); }
 
 /* lines with pixel leader dots */
 .ml-line { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 16px; }

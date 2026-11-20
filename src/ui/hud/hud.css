@@ -13,10 +13,10 @@
 .ml-hud__hex { flex: none; }
 
 .ml-hud__counter, .ml-hud__chip { background: var(--ml-cream); box-shadow: var(--ml-frame2), 3px 3px 0 2px var(--ml-shadow); margin: 2px; }
-.ml-hud__counter { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 3px 8px 3px 6px; min-height: 36px; }
+.ml-hud__counter { display: flex; align-items: center; gap: 6px; min-width: min-content; padding: 3px 8px 3px 6px; min-height: 36px; }
 .ml-hud__counter--neg .ml-hud__num { color: var(--ml-stamp); }
 .ml-hud__stack { display: flex; flex-direction: column; min-width: 0; gap: 3px; }
-.ml-hud__label { font-size: 10px; line-height: 1; font-weight: 800; letter-spacing: 0.04em; color: var(--ml-muted); white-space: nowrap; }
+.ml-hud__label { font-size: 10px; line-height: 1; font-weight: 800; letter-spacing: 0; color: var(--ml-muted); white-space: nowrap; }
 .ml-hud__num { font: 800 15px/1 var(--ml-num); font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--ml-text); }
 .ml-hud__num--up { animation: ml-tick-up 280ms steps(4, end); }
 .ml-hud__num--down { animation: ml-tick-down 280ms steps(4, end); }
@@ -33,6 +33,18 @@
 .ml-hud__meter[data-testid="stat-relationships"] .ml-hud__pips span.is-on { background: var(--ml-turquoise); }
 .ml-hud__weather { padding: 2px 5px; background: var(--ml-sky); }
 .ml-hud__runway--low { color: var(--ml-stamp); }
+
+/* small phones (360px): the same HUD, a little tighter, so no label or number is ever clipped */
+@media (max-width: 420px) {
+  .ml-hud { left: 6px; right: 6px; gap: 6px; }
+  .ml-hud--nolang { right: 6px; }
+  .ml-hud__main, .ml-hud__row { gap: 6px; }
+  .ml-hud__row .ml-hud__counter { flex: 1 1 auto; max-width: none; }
+  .ml-hud__counter { gap: 5px; padding: 3px 6px 3px 5px; }
+  .ml-hud__num { font-size: 14px; }
+  .ml-hud .ml-lang { min-width: 44px; padding: 0 8px 4px; font-size: 13px; }
+  .ml-hud .ml-flow-hexbtn { zoom: 0.8; }
+}
 
 /* classic (2D) mode: the bar sits in the page flow and sticks to the top */
 body:not(.ml-is-3d) .ml-hud { position: sticky; top: 6px; left: auto; right: auto; margin: 0 0 14px; }

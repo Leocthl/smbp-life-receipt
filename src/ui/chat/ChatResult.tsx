@@ -48,7 +48,7 @@ export function ChatResult({ state, card, result, entry, onNext }: { state: Game
   );
 
   return (
-    <ChatFrame testId="result" emote={emote} emoteKey={Math.min(stage, 1)} talking={talking} term={termLabel(state, t)} footer={footer} onSkip={() => setSkip((n) => n + 1)}>
+    <ChatFrame testId="result" emote={emote} emoteKey={Math.min(stage, 1)} talking={talking} term={termLabel(state, t)} peek={t(reaction.lineKey)} footer={footer} onSkip={() => setSkip((n) => n + 1)}>
       <PlayerBubble name={t('mascot.you')} testId="chosen"><p className="ml-chat__line">{t(base, vars)}</p></PlayerBubble>
       {result.outcomeId && (
         <SpeakerBubble speaker={ev.speaker} name={t(`speaker.${ev.speaker}`)} testId="outcome">

@@ -7,7 +7,7 @@ import './slip.css';
 export function Receipt({ children, testId, stamp, className }: { children: ReactNode; testId?: string; stamp?: string; className?: string }) {
   return (
     <section className={`ml-receipt ${className ?? ''}`} data-testid={testId}>
-      <div className="ml-receipt__edge ml-receipt__edge--top" aria-hidden="true"><span className="ml-receipt__handle" /></div>
+      <div className="ml-receipt__edge ml-receipt__edge--top" aria-hidden="true" data-grab><span className="ml-receipt__handle" /></div>
       <div className="ml-receipt__body">
         {children}
         {stamp && <div className="ml-stamp" role="status">{stamp}</div>}

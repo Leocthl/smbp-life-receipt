@@ -18,6 +18,9 @@ import { SummaryScreen } from './screens/SummaryScreen';
 import { WalkPrompt } from './WalkPrompt';
 import { WorldBackdrop } from './WorldBackdrop';
 import { GoalScreen } from './screens/GoalScreen';
+import { SheetHandle } from './sheet/SheetHandle';
+import { SheetFitContext } from './sheet/sheetFit';
+import { useSheet } from './sheet/useSheet';
 import { advance, afterSummary, applyMiniScore, beginTurn, pickGoal, startSession, type Session } from './session';
 
 const params = new URLSearchParams(window.location.search);
@@ -48,6 +51,8 @@ export function App() {
   const [stage, setStage] = useState<StageApi | null>(null);
   const [mini, setMini] = useState<{ id: MiniGameId; next: Session } | null>(null);
   const i18n = useMemo(() => makeI18n(lang), [lang]);
+  // ?debug=1 lets e2e/camera.mjs read the camera; it is a no-op otherwise
+  useEffect(() => { if (params.get('debug') === '1') (window as unknown as { __mlStage?: StageApi | null }).__mlStage = stage; }, [stage]);
   const fasting = isFasting(session);
   useFast(session, setSession);
   const walk = useWalk(stage, session, is3d && !fasting);
@@ -70,6 +75,7 @@ export function App() {
   const slipKey = session ? `${session.state.turn}-${session.index}-${screen.kind}` : 'start';
   const away = walk.spot !== null || cutting; // the slip steps aside for the walk or the film
   const stageRef = useRef<HTMLElement>(null);
+  const sheet = useSheet(stageRef, screen.kind !== 'start' && !away, slipKey, walk.spot !== null); // phone: the slip is a bottom sheet you can drag
   useEffect(() => {
     // each slip starts at the top; keyboard and screen-reader focus moves to it unless a button grabbed it
     window.scrollTo(0, 0);
@@ -96,7 +102,12 @@ export function App() {
       {!cutting && <Hud state={playing?.state} hexSlot={playing && <HexButton session={playing} />} onLang={toggleLang} />}
       {walk.spot && <WalkPrompt spot={walk.spot} onSkip={walk.skip} />}
       <div className="ml-app">
-        <main className="ml-stage" key={slipKey} data-slip={slipKey} ref={stageRef} tabIndex={-1} hidden={away}>
+        <main
+          className="ml-stage" key={slipKey} data-slip={slipKey} ref={stageRef} tabIndex={-1} hidden={away}
+          data-sheet={sheet.on ? '1' : undefined} data-snap={sheet.on ? sheet.snap : undefined} {...sheet.bind}
+        >
+          {sheet.on && <SheetHandle sheet={sheet} />}
+          <SheetFitContext.Provider value={sheet.fit}>
           {!away && screen.kind === 'start' && <StartScreen seed={seed} onStart={() => setSession(startSession(seed))} />}
           {!away && session && screen.kind === 'intro' && <IntroScreen state={session.state} onGo={() => setSession(beginTurn(session))} />}
           {!away && session && screen.kind === 'card' && <CardScreen state={session.state} card={screen.card} onChoose={onChoose} />}
@@ -106,6 +117,7 @@ export function App() {
           {!away && session && screen.kind === 'ending' && (
             <EndingScreen state={session.state} goal={screen.goal} onAgain={() => { const s = randomSeed(); setSeed(s); setSession(startSession(s)); }} />
           )}
+          </SheetFitContext.Provider>
         </main>
       </div>
       {mini && <MiniGame id={mini.id} seed={mini.next.state.seed + mini.next.state.turn} onDone={(r) => endMini(r.score)} onSkip={() => endMini(null)} />}

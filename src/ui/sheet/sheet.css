@@ -1,0 +1,45 @@
+/* The phone's bottom sheet: a grab bar over the slip, three snap heights, the world visible above. All classes ml-sheet-*. */
+.ml-sheet__bar { display: none; }
+
+@media (max-width: 899px) {
+  body.ml-is-3d .ml-stage[data-sheet] {
+    height: var(--ml-sheet-h, 55dvh); display: flex; flex-direction: column; padding-bottom: env(safe-area-inset-bottom);
+    transition: height 240ms var(--ml-ease);
+  }
+  body.ml-is-3d .ml-stage[data-sheet][data-drag] { transition: none; }
+  .ml-stage[data-snap="peek"] { --ml-sheet-h: calc(120px + env(safe-area-inset-bottom)); }
+  .ml-stage[data-snap="half"] { --ml-sheet-h: 55dvh; }
+  .ml-stage[data-snap="full"] { --ml-sheet-h: min(90dvh, calc(100dvh - 92px - env(safe-area-inset-top))); }
+
+  /* a 44px tap target; the visible tab sits on the bottom edge so it joins the panel */
+  .ml-stage[data-sheet] [data-grab] { touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; }
+  .ml-sheet__bar { display: flex; flex: none; justify-content: center; align-items: flex-end; height: 44px; }
+  .ml-sheet__handle {
+    appearance: none; display: flex; align-items: center; justify-content: center; width: 100%; max-width: 220px; height: 44px; margin: 0; padding: 0 0 0; border: 0; background: transparent; cursor: inherit;
+  }
+  .ml-sheet__handle:focus-visible { outline: none; }
+  .ml-sheet__grip {
+    display: flex; align-items: center; justify-content: center; gap: 5px; align-self: flex-end; width: 76px; height: 22px; margin-bottom: 0;
+    background: var(--ml-cream); box-shadow: 0 -3px 0 0 var(--ml-ink), -3px 0 0 0 var(--ml-ink), 3px 0 0 0 var(--ml-ink), 3px -3px 0 0 var(--ml-shadow);
+  }
+  .ml-sheet__grip i { width: 4px; height: 4px; background: var(--ml-ink); }
+  .ml-sheet__handle:focus-visible .ml-sheet__grip { box-shadow: 0 -3px 0 0 var(--ml-ink), -3px 0 0 0 var(--ml-ink), 3px 0 0 0 var(--ml-ink), var(--ml-halo); }
+  .ml-sheet__handle[data-snap="full"] .ml-sheet__grip i:nth-child(2) { width: 12px; }
+  .ml-sheet__handle[data-snap="peek"] .ml-sheet__grip i:nth-child(2) { height: 8px; }
+
+  /* the slip fills what is left under the bar */
+  .ml-stage[data-sheet] > .ml-chat, .ml-stage[data-sheet] > .ml-receipt { flex: 1 1 0; min-height: 0; }
+  .ml-stage[data-sheet] > .ml-chat { height: auto; margin: 0 5px 4px; }
+  /* Slip's header is always small on a phone. Peek and half: face plus the situation in two lines; full: name, term and mood */
+  .ml-stage[data-sheet] .ml-chat { --ml-ms: 1; }
+  .ml-stage[data-sheet] .ml-receipt__handle { display: none; }
+  .ml-stage[data-sheet]:not([data-snap="full"]) .ml-chat__peek { display: -webkit-box; }
+  .ml-stage[data-sheet]:not([data-snap="full"]) .ml-chat__mood, .ml-stage[data-sheet]:not([data-snap="full"]) .ml-chat__term { display: none; }
+  .ml-stage[data-snap="peek"] .ml-chat__name { display: none; }
+  /* a result already says its line in the first bubble: at half the header shows Slip's mood instead */
+  .ml-stage[data-snap="half"] .ml-chat[data-testid="result"] .ml-chat__peek { display: none; }
+  .ml-stage[data-snap="half"] .ml-chat[data-testid="result"] .ml-chat__mood { display: block; }
+  .ml-stage[data-snap="peek"] .ml-receipt__body { overflow: hidden; }
+  .ml-stage[data-snap="peek"] .ml-chat__thread, .ml-stage[data-snap="peek"] .ml-chat__foot { display: none; }
+}
+@media (max-width: 899px) and (prefers-reduced-motion: reduce) { body.ml-is-3d .ml-stage[data-sheet] { transition: none; } }
