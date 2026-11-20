@@ -14,8 +14,19 @@ export const BEDROOM_SLOTS: Slot[] = [
   S('shelf', 2.1, 0.92, -2.65), S('shelf', 2.8, 0.92, -2.65), S('shelf', 2.1, 1.62, -2.65), S('shelf', 2.8, 1.62, -2.65), S('shelf', 2.1, 2.32, -2.65), S('shelf', 2.8, 2.32, -2.65),
   S('shelf', -2.5, 1.95, -2.7), S('shelf', -1.8, 1.95, -2.7), S('shelf', -1.1, 1.95, -2.7),
   S('floor', -0.2, 0, 1.9), S('floor', 0.8, 0, 2.3), S('floor', 1.9, 0, 1.2), S('floor', 2.4, 0, 2.4), S('floor', 0.4, 0, 0.4), S('floor', 1.8, 0, -0.5), S('floor', -0.1, 0, -1.3),
+  S('floor', 1.2, 0, -1.7), S('floor', 2.4, 0, -1.3), S('floor', -0.3, 0, -0.3),
   S('wall', -2.87, 2.0, -1.2, 'x'), S('wall', -2.87, 2.0, 0.3, 'x'), S('wall', -2.87, 2.0, 1.3, 'x'), S('wall', -2.87, 2.0, 2.3, 'x'),
 ];
+
+/** Where the avatar stands in each indoor scope: keepsakes keep clear of it (and off its camera-facing side). */
+export const HERO_AT: Partial<Record<Scope, { x: number; z: number }>> = { room: { x: 1, z: 1.5 }, home: { x: 5, z: 1 } };
+
+/** True when a floor slot would crowd the hero: close by, or in front of it from the camera (+x +z). */
+export function crowdsHero(s: Slot, hero: { x: number; z: number } | undefined): boolean {
+  if (!hero || s.type !== 'floor') return false;
+  const d = Math.hypot(s.x - hero.x, s.z - hero.z);
+  return d < 2 || (d < 3.2 && s.x + s.z > hero.x + hero.z - 0.5);
+}
 
 /** The living room next door (the flat scope). */
 export const LIVING_SLOTS: Slot[] = [

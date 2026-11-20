@@ -11,6 +11,8 @@ export interface PanelOpts {
   density?: number; jitter?: number; opacity?: number; shade?: number; sway?: number; thick?: number;
   /** keep only the part of the rectangle where this is true (u, v in 0..1) */
   mask?: (u: number, v: number) => boolean;
+  /** flat effect colour: no light steps, no ink outline (water that fades into the sky) */
+  fx?: boolean;
 }
 
 const channel = (hex: number, shift: number) => (hex >> shift) & 255;
@@ -48,7 +50,7 @@ export function panel(b: Builder, axis: Axis, c: Vec3, w: number, h: number, col
     const p: [number, number, number] = axis === 'z' ? [c[0] + u, c[1] + v, c[2]] : axis === 'x' ? [c[0], c[1] + v, c[2] + u] : [c[0] + u, c[1], c[2] + v];
     const s: [number, number, number] = axis === 'z' ? [su, sv, t] : axis === 'x' ? [t, sv, su] : [su, t, sv];
     const cell = patterned ? panelClip(axis, [c[0] + (axis === 'x' ? 0 : ((i + 0.5) / nu - 0.5) * w), c[1] + (axis === 'y' ? 0 : ((j + 0.5) / nv - 0.5) * h), c[2] + (axis === 'x' ? ((i + 0.5) / nu - 0.5) * w : axis === 'y' ? ((j + 0.5) / nv - 0.5) * h : 0)], du, dv, t) : panelClip(axis, c, w, h, t);
-    b.add({ p, s, color: hex, opacity: o.opacity ?? 0.95, sway: o.sway, n, clip: cell });
+    b.add({ p, s, color: hex, opacity: o.opacity ?? 0.95, sway: o.sway, n, clip: cell, fx: o.fx });
   }
 }
 

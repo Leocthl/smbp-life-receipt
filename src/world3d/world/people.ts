@@ -1,4 +1,4 @@
-import { bystander, figure } from './figure';
+import { bystander as bys, figure as fig, type FigureLook } from './figure';
 import { HOME_DOOR } from './layout';
 import type { Ctx } from './ctx';
 
@@ -7,16 +7,27 @@ import type { Ctx } from './ctx';
 const FRIEND_SLOTS: [number, number][] = [[-7.3, -7.5], [-10.5, -7.4], [-7.9, -6.4], [-10.0, -6.3], [-6.5, -8.6]];
 const SUIT = [0x2b3a55, 0x6b789c, 0x3d7fc4];
 const WHITE_HAIR = 0xc9d3e6;
+/** From far away people must still read: bigger, in loud colours with dark trousers (their outline comes from the pixel pass). */
+const FAR_SCALE: Record<string, number> = { city: 1.5, district: 1.3 };
+const LOUD = [0xd9553f, 0x3d7fc4, 0xffd85a, 0xff9ec4, 0x4cc3d9, 0x7ed07a];
+const far = (ctx: Ctx) => FAR_SCALE[ctx.scope] ?? 1;
+function bystander(ctx: Ctx, x: number, z: number, o: Partial<FigureLook> = {}): void {
+  const k = far(ctx), loud = k > 1 ? { top: LOUD[Math.floor(ctx.rnd() * LOUD.length)], pants: 0x2b3a55 } : {};
+  bys(ctx.L.crowd, x, z, { ...loud, ...o, scale: (o.scale ?? 1) * k });
+}
+function figure(ctx: Ctx, x: number, z: number, look: FigureLook): void {
+  fig(ctx.L.crowd, x, z, { ...look, scale: (look.scale ?? 1) * far(ctx) });
+}
 
 function around(ctx: Ctx, cx: number, cz: number, n: number, rx: number, rz: number, o: (i: number) => Parameters<typeof bystander>[3] = () => ({})): void {
-  for (let i = 0; i < n; i += 1) bystander(ctx.L.crowd, cx + (ctx.rnd() - 0.5) * 2 * rx, cz + (ctx.rnd() - 0.5) * 2 * rz, o(i));
+  for (let i = 0; i < n; i += 1) bystander(ctx, cx + (ctx.rnd() - 0.5) * 2 * rx, cz + (ctx.rnd() - 0.5) * 2 * rz, o(i));
 }
 
 function family(ctx: Ctx): void {
-  const { crowd, glow } = ctx.L, d = ctx.d;
-  if (d.partner) figure(crowd, HOME_DOOR.x + 0.9, HOME_DOOR.z + 0.1, { top: 0xff9ec4, pants: 0x6b789c, hair: 0x2b3a55 });
+  const { glow } = ctx.L, d = ctx.d;
+  if (d.partner) figure(ctx, HOME_DOOR.x + 0.9, HOME_DOOR.z + 0.1, { top: 0xff9ec4, pants: 0x6b789c, hair: 0x2b3a55 });
   if (d.kids > 0) {
-    figure(crowd, HOME_DOOR.x - 0.7, HOME_DOOR.z + 0.2, { top: 0xffd85a, pants: 0x3d7fc4, hair: 0x2b3a55, scale: 0.62 });
+    figure(ctx, HOME_DOOR.x - 0.7, HOME_DOOR.z + 0.2, { top: 0xffd85a, pants: 0x3d7fc4, hair: 0x2b3a55, scale: 0.62 });
     glow.blob(HOME_DOOR.x - 0.45, 1.5, HOME_DOOR.z + 0.2, 0.17, 0.2, 0.17, 18, 0xd9553f, 0.06);
     ctx.L.solid.add({ p: [HOME_DOOR.x - 0.58, 0.9, HOME_DOOR.z + 0.2], s: [0.012, 0.3, 0.012], color: 0xfff6dc });
   }
@@ -24,7 +35,7 @@ function family(ctx: Ctx): void {
 
 function friends(ctx: Ctx): void {
   const n = Math.round(ctx.bonds * 5);
-  FRIEND_SLOTS.slice(0, n).forEach(([x, z]) => bystander(ctx.L.crowd, x, z));
+  FRIEND_SLOTS.slice(0, n).forEach(([x, z]) => bystander(ctx, x, z));
 }
 
 function work(ctx: Ctx): void {

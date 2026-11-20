@@ -51,14 +51,31 @@ function seawall(ctx: Ctx): void {
   line(s, [9.5, 0.7, SEA_Z - 0.15], [14, 0.7, SEA_Z - 0.15], 0xfff6dc, 0.045, 0.07);
 }
 
+/** Water is a hard-edged sheet near the quay that steps out into the sky in three translucent rings, so it never ends in a cliff. */
+const SEA_HALF_X = 20, SEA_DEPTH = 13, RING = 2.5, RING_ALPHA = [0.5, 0.35, 0.2];
+
 function sea(ctx: Ctx): void {
-  const { water } = ctx.L, [deep, mid, foam] = ctx.tone.water, rnd = ctx.rnd;
-  const rough = ctx.tone.rain ? 0.16 : 0.07;
-  // rows of dark wave dashes on a flat water sheet, laid out on a grid so the edges are crisp pixel art
-  const row = (u: number, v: number) => { const j = Math.floor(v * 56), k = (u * 160 + j * 3.7) % 9; return k < 2.4 ? deep : mid; };
-  panel(water, 'y', [0, -0.3, SEA_Z - 0.3 + 14], 80, 28, row, { density: 4, thick: 0.02 });
-  for (let i = 0; i < 260; i += 1) panel(water, 'y', [-38 + rnd() * 76, -0.26, SEA_Z + rnd() * 27], 0.5 + rnd() * 0.5, 0.12, foam, { density: 40, thick: 0.01, opacity: 0.95 });
-  void rough;
+  const { water } = ctx.L, [deep, mid, foam] = ctx.tone.water;
+  const z0 = SEA_Z - 0.3;
+  // rows of dark wave dashes laid out on the world grid, so neighbouring panels line up
+  const wave = (x0: number, zA: number, w: number, h: number) => (u: number, v: number) => {
+    const ix = Math.floor((x0 + u * w) * 2), j = Math.floor((zA + v * h) * 2), k = (((ix + j * 3.7) % 9) + 9) % 9;
+    return k < 2.4 ? deep : mid;
+  };
+  const sheet = (x0: number, x1: number, za: number, zb: number, opacity: number) => {
+    if (x1 - x0 < 0.1 || zb - za < 0.1) return;
+    panel(water, 'y', [(x0 + x1) / 2, -0.3, (za + zb) / 2], x1 - x0, zb - za, wave(x0, za, x1 - x0, zb - za), { density: 4, thick: 0.02, opacity, fx: true });
+  };
+  const zf = z0 + SEA_DEPTH;
+  sheet(-SEA_HALF_X, SEA_HALF_X, z0, zf, 0.95);
+  RING_ALPHA.forEach((a, k) => {
+    const d0 = k * RING, d1 = (k + 1) * RING, xl = SEA_HALF_X + d0, xr = SEA_HALF_X + d1;
+    sheet(-xr, xr, zf + d0, zf + d1, a);
+    sheet(-xr, -xl, z0, zf + d0, a);
+    sheet(xl, xr, z0, zf + d0, a);
+  });
+  // a few long, gentle highlight rows
+  for (let r = 0; r < 6; r += 1) for (let x = -SEA_HALF_X + ((r * 5) % 7); x < SEA_HALF_X - 2; x += 5.5) panel(water, 'y', [x, -0.26, z0 + 1.6 + r * 2], 1.5 + (r % 3) * 0.4, 0.14, foam, { density: 40, thick: 0.01, fx: true });
 }
 
 function pier(ctx: Ctx): void {

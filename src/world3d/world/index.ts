@@ -4,6 +4,7 @@ import type { Scope } from '../descriptor';
 import type { GaussianMesh } from '../gaussian';
 import { createCtx, type Ctx, type Layers } from './ctx';
 import { BOUNDS, SPOTS } from './layout';
+import { HERO_AT } from './slots';
 import { buildEstate } from './estate';
 import { buildTerrain } from './terrain';
 import { buildTowers } from './towers';
@@ -33,8 +34,8 @@ export const framingFor = (scope: Scope): Framing => ({ ...FRAMING[scope], targe
 const indoor = (s: Scope) => s === 'room' || s === 'home';
 
 function spotsFor(scope: Scope): Spot[] {
-  if (scope === 'room') return [{ id: 'home', x: 1, z: 1.5, r: 3 }];
-  if (scope === 'home') return [{ id: 'home', x: 5, z: 1, r: 4 }];
+  if (scope === 'room') return [{ id: 'home', ...HERO_AT.room!, r: 3 }];
+  if (scope === 'home') return [{ id: 'home', ...HERO_AT.home!, r: 4 }];
   return scope === 'block' ? SPOTS.filter((s) => s.id !== 'campus' && s.id !== 'pier') : SPOTS;
 }
 

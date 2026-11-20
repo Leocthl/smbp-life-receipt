@@ -1,7 +1,7 @@
 import type { Category } from '../../engine/types';
 import type { Memento, Scope } from '../descriptor';
 import { drawProp, type Surf } from './props';
-import { BEDROOM_SLOTS, LIVING_SLOTS, SCOPE_SCALE, zonesFor, type Slot, type SlotType } from './slots';
+import { BEDROOM_SLOTS, HERO_AT, LIVING_SLOTS, SCOPE_SCALE, crowdsHero, zonesFor, type Slot, type SlotType } from './slots';
 import type { Ctx } from './ctx';
 
 // Every decision leaves a keepsake. Placement is seeded by eventId + turn, so a prop never jumps when the world rebuilds.
@@ -26,10 +26,10 @@ function hash(s: string): number {
 /** 0.75 .. 1.65 from the money a decision moved. */
 const sizeOf = (m: Memento) => Math.min(1.65, 0.75 + 0.3 * Math.log10(1 + Math.abs(m.netWorthDelta) / 1000));
 
-function takeSlot(groups: Slot[][], used: Set<Slot>, m: Memento): Slot | null {
+function takeSlot(groups: Slot[][], used: Set<Slot>, m: Memento, hero: { x: number; z: number } | undefined): Slot | null {
   const prefer = [...(PREFER[m.tag] ?? PREFER.none), ...ANY];
   for (const slots of groups) for (const type of prefer) {
-    const free = slots.filter((s) => s.type === type && !used.has(s));
+    const free = slots.filter((s) => s.type === type && !used.has(s) && !crowdsHero(s, hero));
     if (free.length > 0) { const s = free[Math.floor(hash(m.eventId + m.turn + type) * free.length)]; used.add(s); return s; }
   }
   return null;
@@ -49,8 +49,8 @@ export function buildMementos(ctx: Ctx, scope: Scope, props: Surf, fresh: Surf):
   ms.forEach((m, i) => {
     const f = i === ms.length - 1 ? fresh : props, key = m.eventId + m.turn;
     if (indoor) {
-      const slot = takeSlot(groups, used, m);
-      const x = slot?.x ?? -0.5 + (i % 5) * 0.7, z = slot?.z ?? 0.3 + Math.floor(i / 5) * 0.5; // overflow: a row on the floor
+      const slot = takeSlot(groups, used, m, HERO_AT[scope]);
+      const x = slot?.x ?? -0.5 + (i % 5) * 0.7, z = slot?.z ?? -1.9 + Math.floor(i / 5) * 0.4; // overflow: a row along the back wall, away from the hero
       drawProp(f, m.tag, { ...opts(ctx, m, SCOPE_SCALE[scope], x, slot?.y ?? 0, z), wall: slot?.wall }, slot?.type === 'wall');
       return;
     }
