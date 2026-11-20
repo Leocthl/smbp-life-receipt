@@ -56,9 +56,9 @@ function paperCard(ctx: CanvasRenderingContext2D) {
 
 function stampBox(ctx: CanvasRenderingContext2D, label: string) {
   ctx.save();
-  ctx.translate(CARD.x + CARD.w - 290, 250); ctx.rotate(-0.12);
+  ctx.translate(CARD.x + CARD.w - 235, 262); ctx.rotate(-0.12);
   ctx.font = `800 46px ${FONT}`;
-  const sw = Math.min(400, ctx.measureText(label).width + 64);
+  const sw = Math.min(340, ctx.measureText(label).width + 64);
   ctx.fillStyle = C.stamp;
   ctx.fillRect(-sw / 2 - 6, -56, sw + 12, 104);
   ctx.fillStyle = C.paper;
