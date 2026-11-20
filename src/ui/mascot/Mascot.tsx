@@ -17,11 +17,13 @@ export interface MascotProps {
   label: string;
   /** hold one pose (no idle motion), for contact sheets */
   still?: boolean;
+  /** with still: show a frame of an idle animation */
+  idleDemo?: 'yawn' | 'doodle';
   className?: string;
 }
 
 /** Slip, drawn as pixel art on a canvas and animated in code. Honours prefers-reduced-motion (static poses, blink only). */
-export function Mascot({ emote, emoteKey, talking = false, label, still = false, className }: MascotProps) {
+export function Mascot({ emote, emoteKey, talking = false, label, still = false, idleDemo, className }: MascotProps) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const anim = useRef<Animator | null>(null);
   const first = useRef({ emote, talking });
@@ -36,6 +38,7 @@ export function Mascot({ emote, emoteKey, talking = false, label, still = false,
     const a = new Animator(now, reduced, still);
     a.setEmote(first.current.emote, now);
     a.setTalking(first.current.talking, now);
+    if (idleDemo) a.preview(idleDemo, now);
     anim.current = a;
     let raf = 0;
     let last = -FRAME_MS;
@@ -49,7 +52,7 @@ export function Mascot({ emote, emoteKey, talking = false, label, still = false,
     };
     raf = requestAnimationFrame(tick);
     return () => { cancelAnimationFrame(raf); anim.current = null; };
-  }, [still]);
+  }, [still, idleDemo]);
 
   useEffect(() => { anim.current?.setEmote(emote, performance.now()); }, [emote, emoteKey]);
   useEffect(() => { anim.current?.setTalking(talking, performance.now()); }, [talking]);

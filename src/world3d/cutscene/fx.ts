@@ -65,7 +65,7 @@ export function cloud(b: Builder, x: number, y: number, scale: number, color: nu
 export function shell(b: Builder, color: number, n: number) {
   for (let i = 0; i < n; i += 1) {
     const u = b.rnd() * 2 - 1, t = b.rnd() * Math.PI * 2, r = Math.sqrt(1 - u * u), k = 0.85 + b.rnd() * 0.15;
-    b.add({ p: [Math.cos(t) * r * k, u * k, Math.sin(t) * r * k * 0.5], s: [0.028, 0.028, 0.028], color: b.rnd() > 0.3 ? color : C.white, opacity: 1 });
+    b.add({ p: [Math.cos(t) * r * k, u * k, Math.sin(t) * r * k * 0.5], s: [0.04, 0.04, 0.04], color: b.rnd() > 0.3 ? color : C.white, opacity: 1 });
   }
 }
 

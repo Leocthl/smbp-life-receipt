@@ -32,7 +32,6 @@
 .ml-hud__meter .ml-hud__pips span.is-on { background: var(--ml-coral); }
 .ml-hud__meter[data-testid="stat-relationships"] .ml-hud__pips span.is-on { background: var(--ml-turquoise); }
 .ml-hud__weather { padding: 2px 5px; background: var(--ml-sky); }
-.ml-hud__runway { flex-direction: column; align-items: flex-start; gap: 3px; padding-top: 4px; }
 .ml-hud__runway--low { color: var(--ml-stamp); }
 
 /* classic (2D) mode: the bar sits in the page flow and sticks to the top */

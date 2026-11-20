@@ -4,6 +4,7 @@ import type { Pose } from './draw';
 const TOP = 13;
 const IDLE_AFTER_MS = 12000;
 const FREEZE_AT_MS = 520;
+const FREEZE_EXTRA_MS = 1900;
 const rand = (lo: number, hi: number) => lo + Math.random() * (hi - lo);
 
 type Extra = { kind: 'yawn' | 'doodle'; at: number; ms: number };
@@ -35,7 +36,12 @@ export class Animator {
     this.emote = e;
     this.since = now;
     this.lastActive = now;
-    this.extra = null;
+    if (!this.still) this.extra = null;
+  }
+
+  /** Start an idle animation right now (contact sheets and tests). */
+  preview(kind: 'yawn' | 'doodle', now: number) {
+    this.extra = { kind, at: now, ms: EXTRA_MS[kind] };
   }
 
   setTalking(on: boolean, now: number) {
@@ -44,7 +50,7 @@ export class Animator {
   }
 
   frame(rawNow: number): Frame {
-    const now = this.still ? this.since + FREEZE_AT_MS : rawNow;
+    const now = this.still ? this.since + (this.extra ? FREEZE_EXTRA_MS : FREEZE_AT_MS) : rawNow;
     const spec = SPEC[this.emote];
     const age = now - this.since;
     const burst = age < BURST_MS;
@@ -62,7 +68,7 @@ export class Animator {
       cheeks: face.cheeks,
       arms: extra?.kind === 'yawn' ? 'stretch' : face.arms,
       lookX: (face.lookX ?? 0) + (motion && !burst ? this.look[0] : 0),
-      lookY: face.lookY ?? 0,
+      lookY: extra?.kind === 'doodle' ? 1 : face.lookY ?? 0,
       top: TOP + this.breath(now, motion) + (extra?.kind === 'yawn' ? -1 : 0),
       lift: motion ? this.hop(age, spec.hop) : 0,
       tongue: motion ? this.tongue(now) : this.talking ? 4 : 0,

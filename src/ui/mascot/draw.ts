@@ -182,8 +182,8 @@ function drawDoodle(ctx: CanvasRenderingContext2D, p: Pose, bottom: number) {
   const px: [number, number][] = [];
   HEART.forEach((row, j) => { for (let i = 0; i < row.length; i += 1) if (row[i] === 'l') px.push([i, j]); });
   const shown = Math.min(px.length, Math.ceil(p.doodle * px.length));
-  const x0 = 24;
-  const y0 = bottom - 9;
+  const x0 = 27;
+  const y0 = bottom - 8;
   px.slice(0, shown).forEach(([i, j]) => rect(ctx, x0 + i, y0 + j, 1, 1, PAL.l));
   const [lx, ly] = px[Math.max(0, shown - 1)];
   const hx = x0 + lx + 3;

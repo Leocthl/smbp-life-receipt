@@ -19,12 +19,12 @@ function fog(b: Builder, a: Area, n: number, color: number, opacity: number) {
   }
 }
 
-/** a block of windows: litFrac of them are lit */
+/** a dark block of windows: litFrac of them are lit */
 export function tower(b: Builder, x: number, y0: number, w: number, h: number, litFrac: number) {
-  for (let i = 0; i < w * h * 9; i += 1) b.add({ p: [x + (b.rnd() - 0.5) * w, y0 + b.rnd() * h, 0], s: [0.22, 0.22, 0.05], color: C.night, opacity: 1 });
-  for (let r = 0; r < h / 0.9; r += 1) for (let k = 0; k < w / 0.8; k += 1) {
+  for (let yy = 0; yy <= h; yy += 0.28) for (let xx = -w / 2; xx <= w / 2; xx += 0.28) b.add({ p: [x + xx, y0 + yy, 0], s: [0.2, 0.2, 0.05], color: C.night, opacity: 1 });
+  for (let r = 0; r < h / 0.8; r += 1) for (let k = 0; k < w / 0.7; k += 1) {
     const lit = b.rnd() < litFrac;
-    b.add({ p: [x - w / 2 + 0.5 + k * 0.8, y0 + 0.6 + r * 0.9, 0.1], s: [0.17, 0.2, 0.05], color: lit ? C.sun : C.ink, opacity: 1 });
+    b.add({ p: [x - w / 2 + 0.4 + k * 0.7, y0 + 0.5 + r * 0.8, 0.1], s: [0.1, 0.13, 0.05], color: lit ? C.sun : C.ink, opacity: 1 });
   }
 }
 
@@ -67,12 +67,12 @@ export const WEATHER: Record<Quality, Weather> = {
     make: (c) => falling(c, 70, { colors: [C.bark, C.tan, C.wood], size: 0.12, sway: 0.3, flat: 0.6 }, 1.8),
   },
   bonds: {
-    sky: C.pale, grade: { sat: 0.45, tint: [0.82, 0.88, 1] }, zoom: 7.5,
-    make: (c) => together(fader(lay(c, (b) => fog(b, c.area, 12, C.pale, 0.22)), 0.9), falling(c, 30, { colors: [C.white, C.pale], size: 0.05, opacity: 0.8, sway: 0.15 }, 0.6)),
+    sky: C.pale, grade: { sat: 0.6, tint: [0.78, 0.86, 1] }, zoom: 7.5,
+    make: (c) => together(fader(lay(c, (b) => fog(b, c.area, 12, C.pale, 0.1)), 0.9), falling(c, 30, { colors: [C.white, C.pale], size: 0.05, opacity: 0.8, sway: 0.15 }, 0.6)),
   },
   freedom: {
     sky: C.pale, grade: { sat: 0.4, tint: [0.88, 0.9, 0.98] },
-    make: (c) => together(fader(lay(c, (b) => fog(b, c.area, 16, C.white, 0.28)), 0.9), falling(c, 26, { colors: [C.cream, C.sand, C.rose], size: 0.3, flat: 1.3, sway: 0.5 }, 2.2)),
+    make: (c) => together(fader(lay(c, (b) => fog(b, c.area, 16, C.white, 0.28)), 0.9), falling(c, 26, { colors: [C.white, C.cream], size: 0.18, flat: 1.3, sway: 0.5 }, 2.2)),
   },
   growth: {
     sky: C.ink, grade: { sat: 0.55, tint: [0.5, 0.55, 0.8] },
@@ -100,11 +100,11 @@ export const BREAKTHROUGH: Record<Quality, (c: Ctx) => Fx> = {
   },
   freedom(c) {
     const kites = lay(c, (b) => { [[-0.5, 0.5], [0.4, 0.2], [-0.2, -0.2], [0.55, -0.45]].forEach(([fx, fy], i) => kite(b, fx * c.area.w * 1.4, fy * c.area.h * 1.5, 1.3, [C.coral, C.sun, C.teal, C.violet][i])); });
-    const papers = falling(c, 24, { colors: [C.cream, C.sand], size: 0.3, flat: 1.3, sway: 0.5 }, -3.6);
+    const papers = falling(c, 24, { colors: [C.white, C.cream], size: 0.18, flat: 1.3, sway: 0.5 }, -3.6);
     return { set(k, t) { kites.node.position.y = Math.sin(t * 0.7) * 0.3 + (1 - k) * -c.area.h; setOpacity(kites, k); papers.set(k, t); } };
   },
   growth: (c) => together(
-    fader(lay(c, (b) => tower(b, -c.area.w * 0.45, -c.area.h * 0.2, Math.min(3.4, c.area.w * 0.7), c.area.h * 1.1, 0.9), 0.25)),
+    fader(lay(c, (b) => tower(b, -c.area.w * 0.45, -c.area.h * 0.2, Math.min(3.4, c.area.w * 0.7), c.area.h * 1.1, 0.9))),
     falling(c, 50, { colors: [C.green, C.leaf, C.glow], size: 0.08, sway: 0.25 }, -1.8, 0.2),
   ),
 };

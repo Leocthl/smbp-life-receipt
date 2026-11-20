@@ -17,12 +17,12 @@ function Num({ value, text }: { value: number; text: string }) {
   return <span key={value} className={`ml-hud__num${dir ? ` ml-hud__num--${dir}` : ''}`}>{text}</span>;
 }
 
-function Counter({ testId, icon, label, value, text }: { testId: string; icon: Sprite; label: string; value: number; text: string }) {
+function Counter({ testId, icon, label, sub, value, text }: { testId: string; icon: Sprite; label: string; sub?: ReactNode; value: number; text: string }) {
   return (
     <div className={`ml-hud__counter${value < 0 ? ' ml-hud__counter--neg' : ''}`} data-testid={testId}>
       <PixelIcon sprite={icon} scale={2} />
       <span className="ml-hud__stack">
-        <span className="ml-hud__label">{label}</span>
+        <span className="ml-hud__label">{label}{sub}</span>
         <Num value={value} text={text} />
       </span>
     </div>
@@ -66,7 +66,10 @@ export function Hud({ state, hexSlot, onLang }: { state?: GameState | null; hexS
       {hexSlot && <div className="ml-hud__hex">{hexSlot}</div>}
       <div className="ml-hud__main">
         <div className="ml-hud__row">
-          <Counter testId="stat-cash" icon={ICONS.coin} label={t('stat.cash')} value={state.cash} text={money(state.cash, lang, true)} />
+          <Counter
+            testId="stat-cash" icon={ICONS.coin} label={t('stat.cash')} value={state.cash} text={money(state.cash, lang, true)}
+            sub={<span className={`ml-hud__runway${rw < 1 ? ' ml-hud__runway--low' : ''}`} data-testid="stat-runway" title={t('stat.runway')}> · {t('stat.runway.unit', { n: rw >= 99 ? '99+' : rw.toFixed(1) })}</span>}
+          />
           <Counter testId="stat-networth" icon={ICONS.gem} label={t('hud.netWorth')} value={netWorth(state)} text={money(netWorth(state), lang, true)} />
           {onLang && <LangButton onLang={onLang} />}
         </div>
@@ -75,10 +78,6 @@ export function Hud({ state, hexSlot, onLang }: { state?: GameState | null; hexS
           <Meter icon={ICONS.heart} value={state.happiness} label={t('stat.happiness')} testId="stat-happiness" />
           <Meter icon={ICONS.people} value={state.relationships} label={t('stat.relationships')} testId="stat-relationships" />
           <span className="ml-hud__chip ml-hud__weather" title={weather} role="img" aria-label={weather}><PixelIcon sprite={WEATHER[regime]} scale={2} /></span>
-          <span className={`ml-hud__chip ml-hud__runway${rw < 1 ? ' ml-hud__runway--low' : ''}`} data-testid="stat-runway" title={t('stat.runway')}>
-            <span className="ml-hud__label">{t('stat.runway')}</span>
-            {t('stat.runway.unit', { n: rw >= 99 ? '99+' : rw.toFixed(1) })}
-          </span>
         </div>
       </div>
     </header>

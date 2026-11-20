@@ -24,7 +24,7 @@ function coaster(ps: PropSet, a: Area, y: number, depth: number): Fx {
   const track = ps.add((b) => {
     for (let x = -a.w; x <= a.w; x += 0.2) {
       b.add({ p: [x, curve(x), 0], s: [0.09, 0.09, 0.05], color: C.coral, opacity: 1 });
-      if (Math.round(x * 5) % 6 === 0) for (let s = curve(x) - 0.2; s > curve(x) - a.h * 0.5; s -= 0.18) b.add({ p: [x, s, 0], s: [0.04, 0.09, 0.04], color: C.sand, opacity: 0.9 });
+      if (Math.round(x * 5) % 12 === 0) for (let s = curve(x) - 0.2; s > curve(x) - a.h * 0.22; s -= 0.18) b.add({ p: [x, s, 0], s: [0.04, 0.09, 0.04], color: C.sand, opacity: 0.9 });
     }
   }, { anchored: true, depth });
   const car = ps.add((b) => { b.blob(0, 0, 0, 0.5, 0.25, 0.2, 30, C.sun, 0.16); b.blob(0, 0.3, 0, 0.2, 0.2, 0.2, 18, C.rose, 0.1); }, { anchored: true, depth: depth - 1 });
@@ -36,7 +36,7 @@ function coaster(ps: PropSet, a: Area, y: number, depth: number): Fx {
 }
 
 function fireworks(h: HillCtx): Fx {
-  const r = Math.min(h.area.w * 0.8, 3);
+  const r = Math.min(h.area.w * 1.1, 4.2);
   const bursts = [C.sun, C.coral, C.violet, C.teal].map((color, i) => ({ p: sky(h, (b) => shell(b, color, 80), 0.35), x: (i - 1.5) * h.area.w * 0.45, y: h.area.h * (0.45 + (i % 2) * 0.18), off: i * 0.31 }));
   return { set(k, t) {
     for (const s of bursts) {
@@ -67,7 +67,7 @@ function ringSlice(b: Builder, x: number, y: number, rMax: number) {
 function garland(b: Builder, from: number, to: number, y: number, z: number, colors: number[]) {
   for (let i = 0; i <= 16; i += 1) {
     const s = i / 16, x = lerp(from, to, s);
-    b.blob(x, y - Math.sin(s * Math.PI) * 0.9, z, 0.16, 0.16, 0.16, 14, colors[i % colors.length], 0.1);
+    b.blob(x, y - Math.sin(s * Math.PI) * 0.9, z, 0.3, 0.3, 0.3, 30, colors[i % colors.length], 0.16);
   }
 }
 
@@ -91,7 +91,7 @@ export const FLAVOURS: Record<EndingLabel, Flavour> = {
       const neon = lay(c, (b) => { for (let i = 0; i < 14; i += 1) ball(b, (b.rnd() * 2 - 1) * c.area.w, (b.rnd() * 1.6 - 0.8) * c.area.h, 0.25, [C.coral, C.violet, C.teal, C.rose][i % 4], { halo: 2.6 }); }, 0.45);
       return { set(k, t) { on(neon, k * (1 - smooth((t - 13) / 3)) * (0.8 + 0.2 * Math.sin(t * 5))); } };
     },
-    hill(h) { const g = local(h, (b) => garland(b, -7, 7, 3.4, -1, [C.coral, C.violet, C.teal, C.sun]), 0.35); return { set: (k, t) => on(g, k * (0.7 + 0.3 * Math.sin(t * 3))) }; },
+    hill(h) { const g = local(h, (b) => garland(b, -5, 5, 3.4, -1, [C.coral, C.violet, C.teal, C.sun]), 0.35); return { set: (k, t) => on(g, k * (0.7 + 0.3 * Math.sin(t * 3))) }; },
   },
   steady: {
     hill(h) {
@@ -113,12 +113,12 @@ export const FLAVOURS: Record<EndingLabel, Flavour> = {
       return { set(k) { p.g.uniforms.uReveal.value = k; p.node.scale.setScalar(lerp(0.5, 1, k)); p.root.visible = k > 0.01; } };
     },
     hill(h) {
-      const p = local(h, (b) => { tree(b, 6.6, 0.8, 5); ringSlice(b, -5.2, 2.7, 2.4); });
+      const p = local(h, (b) => { tree(b, 4.6, 0.8, 4.4); ringSlice(b, -3.2, 3.0, 1.7); });
       return { set: (k) => on(p, k) };
     },
   },
   debtJuggler: {
-    act2: (c) => rising(c, 26, { colors: [C.cream, C.sand, C.rose], size: 0.3, flat: 1.3, sway: 0.5 }, -3.4),
+    act2: (c) => rising(c, 26, { colors: [C.white, C.cream], size: 0.18, flat: 1.3, sway: 0.5 }, -3.4),
     hill: kitesInSky,
   },
   exitOnRed: {
@@ -127,7 +127,7 @@ export const FLAVOURS: Record<EndingLabel, Flavour> = {
       return { set(k) { line.g.uniforms.uReveal.value = k; on(line, k); } };
     },
     hill(h) {
-      const gate = local(h, (b) => { b.surface(box(0.3, 3.4, 0.3, C.coral, 4.4, 0, 3), { density: 30, size: 0.09 }); b.surface(box(0.3, 3.4, 0.3, C.coral, 7, 0, 3), { density: 30, size: 0.09 }); b.surface(box(3.4, 0.3, 0.4, C.coral, 5.7, 3.2, 3), { density: 30, size: 0.09 }); b.surface(box(3, 0.2, 0.3, C.sand, 5.7, 2.8, 3), { density: 30, size: 0.09 }); }, 0.1);
+      const gate = local(h, (b) => { b.surface(box(0.3, 3.4, 0.3, C.coral, 3.2, 0, 3), { density: 30, size: 0.09 }); b.surface(box(0.3, 3.4, 0.3, C.coral, 5.4, 0, 3), { density: 30, size: 0.09 }); b.surface(box(3.2, 0.3, 0.4, C.coral, 4.3, 3.2, 3), { density: 30, size: 0.09 }); b.surface(box(2.6, 0.2, 0.3, C.sand, 4.3, 2.8, 3), { density: 30, size: 0.09 }); }, 0.1);
       const line = sky(h, (b) => { for (let i = 0; i < 30; i += 1) { const s = i / 29; b.add({ p: [lerp(-h.area.w * 0.8, h.area.w * 0.8, s), lerp(h.area.h * 0.1, h.area.h * 0.7, s) + Math.sin(s * 8) * 0.2, 0], s: [0.1, 0.1, 0.05], color: C.green, opacity: 1 }); } }, 0.3);
       return { set(k) { on(gate, k); on(line, k); } };
     },

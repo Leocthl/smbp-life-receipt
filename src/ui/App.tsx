@@ -66,7 +66,7 @@ export function App() {
           {screen.kind === 'start' && <StartScreen seed={seed} onStart={() => setSession(startSession(seed))} />}
           {session && screen.kind === 'intro' && <IntroScreen state={session.state} onGo={() => setSession(beginTurn(session))} />}
           {session && screen.kind === 'card' && <CardScreen state={session.state} card={screen.card} onChoose={(id) => setSession(choose(session, id))} />}
-          {session && screen.kind === 'result' && <ResultScreen state={session.state} card={screen.card} result={screen.result} onNext={() => setSession(advance(session))} />}
+          {session && screen.kind === 'result' && <ResultScreen state={session.state} card={screen.card} result={screen.result} entry={session.trail[session.trail.length - 1]} onNext={() => setSession(advance(session))} />}
           {session && screen.kind === 'summary' && <SummaryScreen state={session.state} summary={screen.summary} onNext={() => setSession(afterSummary(session))} />}
           {session && screen.kind === 'goal' && <GoalScreen onPick={(g) => setSession(pickGoal(session, g))} />}
           {session && screen.kind === 'ending' && (

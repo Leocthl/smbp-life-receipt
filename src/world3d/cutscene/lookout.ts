@@ -25,9 +25,6 @@ function flat(w: number, d: number, color: number, x: number, y: number, z: numb
 function landGroup(): THREE.Group {
   const g = new THREE.Group();
   g.add(flat(46, 12, C.green, 0, 0, -0.5), flat(2.4, 8, C.sand, 0, 0.02, -2.5));
-  const wall = new THREE.Mesh(new THREE.PlaneGeometry(46, 9), mat(C.leaf)); // hides the lowland that would show under the terrace
-  wall.position.set(0, -4.5, -6.5);
-  g.add(wall);
   const run = 12.5, drop = 8, len = Math.hypot(run, drop);
   g.add(flat(46, len, C.leaf, 0, -drop / 2, 5.5 + run / 2, Math.atan2(drop, run)));
   g.add(flat(46, 6, C.sand, 0, WATER_Y + 0.1, 18 + 3, 0));
@@ -52,6 +49,8 @@ export function tree(b: Builder, x: number, z: number, h: number) {
 export function buildLand(ps: PropSet, at: [number, number, number]): Prop {
   return ps.add((b) => {
     b.surface(landGroup(), { density: 22, size: 0.13, jitter: 0.06 });
+    // the lawn runs on toward the camera, so no lowland shows under the terrace edge
+    b.surface(flat(46, 26, C.green, 0, -0.01, -19.5), { density: 9, size: 0.2, jitter: 0.06 });
     b.surface(benchGroup(-3.4, 1.6), { density: 26, size: 0.1 });
     tree(b, -7.2, -1.5, 3.4);
     tree(b, 7.4, -0.5, 3);

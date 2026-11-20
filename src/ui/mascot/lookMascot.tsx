@@ -15,7 +15,7 @@ import { Mascot } from './Mascot';
 import './look.css';
 
 // ?look=mascot : Slip cycling every emote, a contact sheet of all of them, and a sample conversation.
-//   &emote=cheer       freeze one emote
+//   &emote=cheer       freeze one emote   (&idle=yawn|doodle shows a frame of that idle animation)
 //   &view=card|result  only that conversation panel (&event=hot_tip&choice=small to pick the sample)
 //   &tone=bad          make the result sample a bad one;   &lang=en  English;   &typing=1  keep the typewriter on
 // The page sets document.title = 'ready' once mounted.
@@ -77,6 +77,7 @@ function LookPage({ t, q }: { t: I18n['t']; q: URLSearchParams }) {
   const emote = q.get('emote');
   const view = q.get('view') ?? 'all';
   const one: Emote | null = isEmote(emote) ? emote : null;
+  const idle = q.get('idle') === 'yawn' || q.get('idle') === 'doodle' ? (q.get('idle') as 'yawn' | 'doodle') : undefined;
   useEffect(() => { document.title = 'ready'; }, []);
   if (view === 'card' || view === 'result') {
     return <Chats view={view} eventId={q.get('event') ?? 'hot_tip'} choiceId={q.get('choice') ?? 'small'} bad={q.get('tone') === 'bad'} />;
@@ -84,7 +85,7 @@ function LookPage({ t, q }: { t: I18n['t']; q: URLSearchParams }) {
   return (
     <main className="ml-look">
       {one ? (
-        <figure className="ml-look-cycle"><Mascot emote={one} still label={t(`mascot.mood.${one}`)} /><figcaption>{one}</figcaption></figure>
+        <figure className="ml-look-cycle"><Mascot emote={one} still idleDemo={idle} label={t(`mascot.mood.${one}`)} /><figcaption>{one}{idle ? ` / ${idle}` : ''}</figcaption></figure>
       ) : (
         <><Cycler t={t} /><Sheet t={t} /></>
       )}

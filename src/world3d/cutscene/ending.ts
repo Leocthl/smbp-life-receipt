@@ -79,8 +79,7 @@ function buildHill(ps: ReturnType<typeof createPropSet>, info: EndingInfo, area:
     props, sun,
     update(c) {
       const on = c >= T.hill;
-      const hide = new URLSearchParams(location.search).get('hide') ?? '';
-      props.forEach((p, i) => { p.root.visible = on && !hide.includes(['land', 'city', 'sea', 'people'][i]); });
+      props.forEach((p) => { p.root.visible = on; });
       const k = smooth((c - T.hill) / 8);
       sun.node.position.set(area.w * 0.25, lerp(2.2, 6.4, k), 0);
       setOpacity(sun, on ? 1 : 0);
