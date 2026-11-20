@@ -4,6 +4,7 @@ import { newGame } from '../engine/sim';
 import { endTurn } from '../engine/turn';
 import type { ChoiceResult, GameEvent, GameState, Goal, TraitId, TurnSummary } from '../engine/types';
 import { qualities, type Qualities } from '../world3d/qualities';
+import type { MiniGameId } from './minigames/types';
 import { setCategoryLookup } from '../world3d/descriptor';
 
 /** One decision and what it did to the six qualities (shown on the hexagon and the trail). */
@@ -28,13 +29,18 @@ export interface Session {
   carried: { notices: string[]; reveals: TraitId[] };
   /** every decision with its before/after qualities, oldest first */
   trail: TrailEntry[];
+  /** the six qualities when this year began (for the year-end cutscene's before/after) */
+  yearStart: Qualities;
+  /** age at which each mini-game last ran, so they do not repeat too often */
+  minis: Partial<Record<MiniGameId, number>>;
 }
 
 export const EVENTS: readonly GameEvent[] = ALL_EVENTS;
 setCategoryLookup((id) => ALL_EVENTS.find((e) => e.id === id)?.category ?? 'daily');
 
 export function startSession(seed: number): Session {
-  return { state: newGame(seed), cards: [], index: 0, screen: { kind: 'intro' }, carried: { notices: [], reveals: [] }, trail: [] };
+  const state = newGame(seed);
+  return { state, cards: [], index: 0, screen: { kind: 'intro' }, carried: { notices: [], reveals: [] }, trail: [], yearStart: qualities(state), minis: {} };
 }
 
 /** Draw this turn's cards; if there are none, end the turn straight away. */
@@ -73,11 +79,29 @@ function finishTurn(s: Session): Session {
 
 /** After the year-end summary: next turn, or the "what did you want" question before the ending. */
 export function afterSummary(s: Session): Session {
-  return s.state.done ? { ...s, screen: { kind: 'goal' } } : beginTurn(s);
+  return s.state.done ? { ...s, screen: { kind: 'goal' } } : beginTurn({ ...s, yearStart: qualities(s.state) });
 }
 
 export function pickGoal(s: Session, goal: Goal): Session {
   return { ...s, screen: { kind: 'ending', goal } };
+}
+
+/** Remember that a mini-game ran now, so its cooldown starts. */
+export function rememberMini(s: Session, id: MiniGameId): Session {
+  return { ...s, minis: { ...s.minis, [id]: s.state.age } };
+}
+
+/**
+ * A mini-game is a learning moment, never a money one: the score only nudges happiness (0..+3), so cash,
+ * net worth and the balance of the bots are untouched. Pure: returns a new state.
+ */
+export function withMiniBonus(state: GameState, score: number): GameState {
+  const bonus = Math.round(Math.max(0, Math.min(1, score)) * 3);
+  return { ...state, happiness: Math.min(100, state.happiness + bonus) };
+}
+
+export function applyMiniScore(s: Session, score: number): Session {
+  return { ...s, state: withMiniBonus(s.state, score) };
 }
 
 export function currentEvent(card: Card): GameEvent {

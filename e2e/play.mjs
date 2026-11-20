@@ -14,7 +14,7 @@ const PROFILES = [
   { name: 'desktop', options: { viewport: { width: 1280, height: 900 } } },
   { name: 'phone', options: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true } },
 ];
-const SCREENS = '[data-testid=card], [data-testid=result], [data-testid=summary], [data-testid=goal], [data-testid=ending]';
+const SCREENS = '[data-testid=card], [data-testid=walk], [data-testid=result], [data-testid=summary], [data-testid=goal], [data-testid=ending]';
 
 async function press(page, locator, touch) {
   await locator.waitFor({ state: 'visible' });
@@ -72,8 +72,8 @@ async function playProfile(browser, profile) {
   await press(page, page.getByTestId('start-btn'), touch);
   await press(page, page.getByTestId('begin-life'), touch);
   let slip = await nextSlip(page, 'start');
-  const shot = { card: false, summary: false };
-  let steps = 0, cards = 0, summaries = 0;
+  const shot = { card: false, summary: false, hex: false };
+  let steps = 0, cards = 0, summaries = 0, walks = 0;
   while (steps++ < 600) {
     const kind = slip.split('-').pop();
     if (kind === 'ending') break;
@@ -84,11 +84,22 @@ async function playProfile(browser, profile) {
       continue;
     }
     if (kind === 'card') {
+      // in the 3D world the first card of a turn may ask the player to walk somewhere first: skip the walk
       const options = page.locator('[data-testid^=choice-]');
+      await page.locator('[data-testid^=choice-], [data-testid=walk-skip]').first().waitFor({ state: 'visible' });
+      if (await page.getByTestId('walk-skip').isVisible()) { await press(page, page.getByTestId('walk-skip'), touch); walks++; }
       await options.first().waitFor({ state: 'visible' });
       const n = await options.count();
       await press(page, options.nth(cards % n), touch);
       await page.getByTestId('confirm').and(page.locator(':enabled')).waitFor();
+      if (!shot.hex && cards >= 3) {
+        await press(page, page.getByTestId('hex-open'), touch);
+        await page.getByTestId('hex-panel').waitFor({ state: 'visible' });
+        await checkLayout(page, `${profile.name} hex panel`);
+        await page.keyboard.press('Escape');
+        await page.getByTestId('hex-panel').waitFor({ state: 'detached' });
+        shot.hex = true;
+      }
       if (!shot.card && cards >= 2) { await checkLayout(page, `${profile.name} card`); await page.screenshot({ path: `${SHOTS}${profile.name}-card.png`, fullPage: true }); shot.card = true; }
       cards++;
       await press(page, page.getByTestId('confirm'), touch);
@@ -122,7 +133,7 @@ async function playProfile(browser, profile) {
   await context.close();
   if (!age?.includes('65')) throw new Error(`[${profile.name}] ending reached at "${age}", expected 65`);
   if (errors.length) throw new Error(`[${profile.name}] console errors:\n${errors.join('\n')}`);
-  return { profile: profile.name, cards, summaries, age, label };
+  return { profile: profile.name, cards, summaries, walks, age, label };
 }
 
 const browser = await chromium.launch({ args: ['--use-angle=metal', '--enable-gpu'] });

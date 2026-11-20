@@ -1,8 +1,9 @@
 /* The 3D splat world behind the game, and the shell that lays the HUD and the slip over it. */
 .ml-world { position: fixed; inset: 0; z-index: 0; background: linear-gradient(#8fd3ff, #cdeeff); }
-.ml-world[data-failed] { display: none; }
 .ml-world .ml-world__canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
 body.ml-is-3d { background: #cdeeff; }
+
+.ml-stage[hidden] { display: none; }
 
 /* the slip slides up from the bottom (phone) or in from the right (desktop) */
 .ml-stage { animation: ml-slide 240ms var(--ml-ease) both; }
