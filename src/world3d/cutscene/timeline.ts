@@ -5,6 +5,8 @@ export interface TimelineOptions {
   duration: number;
   /** start here (seconds) and stay here: for screenshots */
   at?: number;
+  /** start here but keep playing: reduced motion jumps to the last scene */
+  from?: number;
   /** 4x while the viewer holds the screen */
   fastForward?: boolean;
 }
@@ -26,7 +28,7 @@ export function cueRunner(cues: readonly Cue[]): (c: number) => void {
  * Resolves when the clock reaches duration or the viewer skips; never when frozen with `at`.
  */
 export async function runTimeline(stage: StageApi, ov: Overlay, o: TimelineOptions, frame: (c: number, dt: number) => void): Promise<void> {
-  let c = o.at ?? 0;
+  let c = o.at ?? o.from ?? 0;
   let stop = false;
   const run = stage.animate((_t, dt) => {
     if (stop) return true;

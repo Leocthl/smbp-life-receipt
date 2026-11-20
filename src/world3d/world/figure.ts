@@ -3,10 +3,10 @@ import type { Builder } from './kit';
 /** A small chunky bystander (about 1.1 tall) made of a few blobs. */
 export interface FigureLook { top: number; pants: number; hair: number; skin?: number; scale?: number; pack?: number; hat?: number }
 
-export const TOPS = [0xd8504a, 0x3c6ea8, 0xffd27a, 0x4f8a6b, 0xff8ad1, 0xf4f1e6, 0x9c84d4, 0xe0a050];
-export const PANTS = [0x23263a, 0x3a3f5c, 0x2a3f6e, 0x6b3f2a];
-export const HAIR = [0x14161f, 0x23263a, 0x6b3f2a, 0x14161f];
-const SKIN = [0xffd2b0, 0xe8b48a, 0xc98f62];
+export const TOPS = [0xd9553f, 0x3d7fc4, 0xffd85a, 0x7ed07a, 0xff9ec4, 0xfff6dc, 0xb9a7ff, 0xf2a93a];
+export const PANTS = [0x2b3a55, 0x6b789c, 0x3d7fc4, 0x6f4a32];
+export const HAIR = [0x2b3a55, 0x2b3a55, 0x6f4a32, 0x2b3a55];
+const SKIN = [0xffc29b, 0xe8a77a, 0xa8744a];
 
 export function figure(b: Builder, x: number, z: number, look: FigureLook): void {
   const s = look.scale ?? 1, skin = look.skin ?? SKIN[Math.floor(b.rnd() * SKIN.length)];

@@ -24,7 +24,10 @@ function flat(w: number, d: number, color: number, x: number, y: number, z: numb
 
 function landGroup(): THREE.Group {
   const g = new THREE.Group();
-  g.add(flat(20, 12, C.green, 0, 0, -0.5), flat(2.4, 8, C.sand, 0, 0.02, -2.5));
+  g.add(flat(46, 12, C.green, 0, 0, -0.5), flat(2.4, 8, C.sand, 0, 0.02, -2.5));
+  const wall = new THREE.Mesh(new THREE.PlaneGeometry(46, 9), mat(C.leaf)); // hides the lowland that would show under the terrace
+  wall.position.set(0, -4.5, -6.5);
+  g.add(wall);
   const run = 12.5, drop = 8, len = Math.hypot(run, drop);
   g.add(flat(46, len, C.leaf, 0, -drop / 2, 5.5 + run / 2, Math.atan2(drop, run)));
   g.add(flat(46, 6, C.sand, 0, WATER_Y + 0.1, 18 + 3, 0));
@@ -48,7 +51,7 @@ export function tree(b: Builder, x: number, z: number, h: number) {
 /** Terrace, slope, bench, railing and trees. */
 export function buildLand(ps: PropSet, at: [number, number, number]): Prop {
   return ps.add((b) => {
-    b.surface(landGroup(), { density: 16, size: 0.2, jitter: 0.06 });
+    b.surface(landGroup(), { density: 22, size: 0.13, jitter: 0.06 });
     b.surface(benchGroup(-3.4, 1.6), { density: 26, size: 0.1 });
     tree(b, -7.2, -1.5, 3.4);
     tree(b, 7.4, -0.5, 3);
@@ -59,19 +62,24 @@ export function buildLand(ps: PropSet, at: [number, number, number]): Prop {
 function cityGroup(rnd: () => number): THREE.Group {
   const g = new THREE.Group();
   const walls = [C.pale, C.sand, C.rose, 0x9fdff0, C.cream, 0xe8dcc0];
-  for (let row = 0; row < 3; row += 1) for (let x = -20; x <= 20; x += 3.6) {
-    const z = 10 + row * 4.2 + rnd() * 1.4, h = 3 + rnd() * (row === 2 ? 9 : 6), w = 2.4 + rnd() * 1.2;
-    const base = -8 * Math.min(1, (z - 5.5) / 12.5) - 1.2;
-    g.add(box(w, h + 1.2, 2.6, walls[Math.floor(rnd() * walls.length)], x + rnd(), base, z));
-    for (let f = 0; f < Math.floor(h / 1.3); f += 1) for (const dx of [-0.6, 0.6]) {
-      g.add(box(0.4, 0.5, 0.06, rnd() > 0.35 ? C.sun : C.slate, x + dx + 0.3, base + 1.6 + f * 1.3, z - 1.32));
-    }
+  for (let row = 0; row < 5; row += 1) for (let x = -24; x <= 24; x += 1.5) {
+    const z = 9.5 + row * 2.6 + rnd() * 0.9, h = 1.6 + row * 0.9 + rnd() * 3, w = 0.9 + rnd() * 0.6;
+    const base = -8.4 * Math.min(1, (z - 5.5) / 12.5) - 0.6;
+    g.add(box(w, h + 0.6, 1.2, walls[Math.floor(rnd() * walls.length)], x + rnd() * 0.4, base, z));
+    for (let f = 0; f < Math.floor(h / 0.8); f += 1) g.add(box(0.2, 0.26, 0.05, rnd() > 0.4 ? C.sun : C.slate, x + rnd() * 0.4, base + 0.8 + f * 0.8, z - 0.63));
   }
   return g;
 }
 
 export function buildCity(ps: PropSet, at: [number, number, number]): Prop {
-  return ps.add((b) => b.surface(cityGroup(b.rnd), { density: 11, size: 0.2, jitter: 0.04 }), { at, seed: 72, glow: 0.1 });
+  return ps.add((b) => b.surface(cityGroup(b.rnd), { density: 26, size: 0.075, jitter: 0.04 }), { at, seed: 72, glow: 0.1 });
+}
+
+function farHill(b: Builder, x: number, z: number, rx: number, ry: number, color: number) {
+  for (let i = 0; i < 300; i += 1) {
+    const t = b.rnd() * Math.PI, d = Math.sqrt(b.rnd());
+    b.add({ p: [x + Math.cos(t) * rx * d, WATER_Y + Math.sin(t) * ry * d, z], s: [0.4, 0.3, 0.3], color, opacity: 1 });
+  }
 }
 
 /** Harbour water, far hills and a few boats. */
@@ -81,7 +89,7 @@ export function buildSea(ps: PropSet, at: [number, number, number]): Prop {
       const sz = 0.35 + b.rnd() * 0.3, hi = b.rnd() > 0.88;
       b.add({ p: [(b.rnd() * 2 - 1) * 42, WATER_Y, 17 + b.rnd() * (HILL_Z_FAR - 17)], s: [sz * 1.6, 0.03, sz], color: hi ? C.pale : b.rnd() > 0.5 ? C.teal : 0x2a9fc0, opacity: 0.9, sway: 0.07 });
     }
-    for (let i = 0; i < 6; i += 1) b.blob(-36 + i * 14, WATER_Y + 1.5, HILL_Z_FAR + 2, 9, 4.2 + (i % 3), 3, 160, i % 2 ? 0x8c7ad8 : C.slate, 0.7, { jitter: 0.03 });
+    for (let i = 0; i < 7; i += 1) farHill(b, -42 + i * 14 + b.rnd() * 4, HILL_Z_FAR + 2, 5 + b.rnd() * 4, 0.9 + b.rnd() * 1.1, i % 2 ? 0x9fdff0 : 0x8c7ad8);
     for (const [x, z] of [[-6, 24], [8, 28], [-14, 31]]) { b.blob(x, WATER_Y + 0.35, z, 1, 0.3, 0.4, 40, C.white, 0.2); b.blob(x, WATER_Y + 1.1, z, 0.06, 0.8, 0.06, 20, C.ink, 0.06); }
   }, { at, seed: 73 });
 }

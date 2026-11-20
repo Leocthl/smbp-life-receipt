@@ -1,3 +1,5 @@
+import type { Spark } from './fx';
+
 export const ROUNDS = 5;
 export const ROUND_SECONDS = 4;
 export const PAUSE_SECONDS = 0.8;
@@ -20,6 +22,8 @@ export interface CompareState {
   pause: number;
   lastOk: boolean | null;
   history: boolean[];
+  /** confetti or puffs from the last answer, purely visual */
+  sparks: Spark[];
 }
 
 /** All-in cost in percent a year: the entry charge spread over 10 years. */
@@ -31,7 +35,7 @@ export function cheapestIndex(funds: Fund[]): number {
   return funds.reduce((best, f, i) => (fundCost(f) < fundCost(funds[best]) ? i : best), 0);
 }
 
-/** Extra money after 30 years on 100k at 5% gross, paying 1.5% a year instead of 0.2%. */
+/** Extra money after 30 years on principal at gross return, paying high instead of low a year. */
 export function feeGap(principal: number, gross: number, low: number, high: number, years: number): number {
   return Math.round(principal * ((1 + gross - low) ** years - (1 + gross - high) ** years));
 }

@@ -14,7 +14,7 @@ export interface WinGrid {
   skip?: (i: number, j: number) => boolean;
 }
 
-const WARM = [0xffd27a, 0xfff0b8, 0xe0a050, 0xffd27a];
+const WARM = [0xffd85a, 0xfff0a0, 0xf2a93a, 0xffd85a];
 
 function at(g: WinGrid, i: number, j: number, off: number): Vec3 {
   const u = g.centre + (i - (g.cols - 1) / 2) * g.pitchU, y = g.y0 + j * g.pitchV + g.h / 2;
@@ -28,7 +28,7 @@ export function windowGrid(ctx: Ctx, g: WinGrid): void {
     if (g.skip?.(i, j)) continue;
     const lit = ctx.rnd() < g.lit;
     const colors = g.litColors ?? WARM;
-    panel(solid, g.axis, at(g, i, j, 0.015), g.w + 0.14, g.h + 0.14, g.frame ?? 0x23263a, { density: 30, shade: g.axis === 'z' ? 0.9 : 0.7 });
+    panel(solid, g.axis, at(g, i, j, 0.015), g.w + 0.14, g.h + 0.14, g.frame ?? 0x2b3a55, { density: 30, shade: g.axis === 'z' ? 0.9 : 0.7 });
     if (g.boarded && ctx.rnd() < g.boarded) { board(ctx, g, i, j); continue; }
     const c = at(g, i, j, 0.04);
     if (lit) panel(glow, g.axis, c, g.w, g.h, colors[Math.floor(ctx.rnd() * colors.length)], { density: 60, shade: 1 });
@@ -40,9 +40,9 @@ export function windowGrid(ctx: Ctx, g: WinGrid): void {
 export function board(ctx: Ctx, g: Pick<WinGrid, 'axis' | 'plane' | 'centre' | 'y0' | 'cols' | 'pitchU' | 'pitchV' | 'w' | 'h'>, i: number, j: number): void {
   const [x, y, z] = at(g as WinGrid, i, j, 0.07);
   const along = (f: number): [number, number, number] => (g.axis === 'z' ? [x + f * g.w * 0.55, y, z] : [x, y, z + f * g.w * 0.55]);
-  panel(ctx.L.solid, g.axis, [x, y, z], g.w, g.h, 0x6b3f2a, { density: 50 });
+  panel(ctx.L.solid, g.axis, [x, y, z], g.w, g.h, 0x6f4a32, { density: 50 });
   for (const s of [-1, 1]) {
     const a = along(-1), b = along(1);
-    line(ctx.L.solid, [a[0], y + s * g.h * 0.5, a[2]], [b[0], y - s * g.h * 0.5, b[2]], darken(0x6b3f2a, 0.5), 0.045, 0.05);
+    line(ctx.L.solid, [a[0], y + s * g.h * 0.5, a[2]], [b[0], y - s * g.h * 0.5, b[2]], darken(0x6f4a32, 0.5), 0.045, 0.05);
   }
 }

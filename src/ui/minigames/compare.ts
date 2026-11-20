@@ -2,6 +2,8 @@ import { makeRng, streamSeed, type Rng } from '../../engine/rng';
 import { drawCompare } from './compareDraw';
 import { CompareOverlay } from './compareOverlay';
 import { FEE_GAP, PAUSE_SECONDS, ROUNDS, ROUND_SECONDS, cheapestIndex, fundCost, type CompareState, type Fund } from './compareState';
+import { C } from './draw';
+import { burst, stepSparks } from './fx';
 import { NO_INPUT, clamp, type GameDef, type Input, type MiniGameResult } from './types';
 
 // Fee detective: five rounds of three funds. Pick the lowest all-in cost before the timer runs out.
@@ -28,7 +30,7 @@ function makeFunds(rng: Rng): Fund[] {
 export function initCompare(seed: number): CompareState {
   const rng = makeRng(streamSeed(seed, 'compare'));
   const funds = makeFunds(rng);
-  return { t: 0, rng: rng.state, round: 0, roundLeft: ROUND_SECONDS, funds, pause: 0, lastOk: null, history: [] };
+  return { t: 0, rng: rng.state, round: 0, roundLeft: ROUND_SECONDS, funds, pause: 0, lastOk: null, history: [], sparks: [] };
 }
 
 function answer(s: CompareState, pick: number, t: number): CompareState {
@@ -37,16 +39,18 @@ function answer(s: CompareState, pick: number, t: number): CompareState {
   return {
     ...s, t, rng: rng.state, round: s.round + 1, roundLeft: ROUND_SECONDS, funds: makeFunds(rng),
     pause: PAUSE_SECONDS, lastOk: ok, history: [...s.history, ok],
+    sparks: burst(s.sparks, 60, 96, ok ? C.sun : C.coral, ok ? 14 : 6),
   };
 }
 
 export function stepCompare(s: CompareState, input: Input, dt: number): CompareState {
   const t = s.t + dt;
-  if (s.pause > 0) return { ...s, t, pause: clamp(s.pause - dt, 0, PAUSE_SECONDS) };
-  if (s.round >= ROUNDS) return s;
+  const sparks = stepSparks(s.sparks, dt);
+  if (s.pause > 0) return { ...s, t, sparks, pause: clamp(s.pause - dt, 0, PAUSE_SECONDS) };
+  if (s.round >= ROUNDS) return { ...s, sparks };
   if (input.pick !== null) return answer(s, input.pick, t);
   const roundLeft = s.roundLeft - dt;
-  return roundLeft <= 0 ? answer(s, -1, t) : { ...s, t, roundLeft };
+  return roundLeft <= 0 ? answer(s, -1, t) : { ...s, t, sparks, roundLeft };
 }
 
 export function compareResult(s: CompareState): MiniGameResult {

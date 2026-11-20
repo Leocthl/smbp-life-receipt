@@ -6,7 +6,7 @@ import { createControls, resolvePosition, type Walk } from './controls';
 import { worldKey, type WorldDescriptor } from './descriptor';
 import { createGaussianBuilder, type GaussianMesh } from './gaussian';
 import { createJoystick } from './joystick';
-import { createDioramaCamera, createPixelRenderer, PALETTE, srgb } from './pixel';
+import { createDioramaCamera, createPixelRenderer, srgb } from './pixel';
 import { buildWorld } from './world';
 import './stage.css';
 
@@ -24,13 +24,6 @@ const MAX_DT = 0.05;
 const RING_SPLATS = 36;
 
 // Daytime palette, swapped in over pixel.ts's night palette. The shader array is fixed-size, so the length must match.
-const DAY_PALETTE = [
-  0x2b3a55, 0x3a4a6b, 0x1f2a44, 0x4f6a8a, 0x8fd3ff, 0xcdeeff, 0x4cc3d9, 0x2a9fc0, 0x9fdff0, 0x7ed07a,
-  0xb6e88a, 0x4fae5f, 0x2f8a4f, 0x1f5c3a, 0xd9f5b8, 0xfff6dc, 0xffffff, 0xf7e9c4, 0xe8dcc0, 0xffd85a,
-  0xffc29b, 0xff8a6b, 0xe8653f, 0xffb3a7, 0xb9a7ff, 0x8c7ad8, 0x9a6b45, 0xc98f5a, 0x6b4a33, 0xfff0b8,
-  0xbfe8ff, 0xffe9b5,
-];
-if (DAY_PALETTE.length !== PALETTE.length) throw new Error('stage: DAY_PALETTE must have PALETTE.length entries');
 
 export interface StageOptions { lang?: Lang }
 
@@ -73,7 +66,6 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
 
   const px = createPixelRenderer(container);
   px.uniforms.vignette.value = 0.12; // daytime: keep the picture bright to the corners
-  px.uniforms.palette.value = DAY_PALETTE.map(srgb);
   px.uniforms.fadeColor.value = srgb(0xfff6dc);
   const cam = createDioramaCamera(VIEW_HEIGHT);
   const scene = new THREE.Scene();

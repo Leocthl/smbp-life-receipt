@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import './world.css';
 
 // The living 3D world behind the game: rebuilt (and re-assembled splat by splat) whenever the life visibly changes.
-// shortcut: a slow orbit stand-in until the walkable stage (src/world3d/stage.ts) is wired in.
+// shortcut: a framed, non-walkable view until the walkable stage (src/world3d/stage.ts) is wired in.
 
 interface Live { px: PixelRenderer; scene: THREE.Scene; world: WorldHandle | null; avatar: AvatarHandle | null; key: string; born: number }
 
@@ -40,6 +40,7 @@ export function WorldBackdrop({ state }: { state: GameState | null }) {
     const l: Live = { px, scene, world: null, avatar: null, key: '', born: 0 };
     live.current = l;
     const cam = createDioramaCamera(22);
+    const upAxis = new THREE.Vector3(0, 1, 0);
     const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const start = performance.now();
     let raf = 0, last = start;
@@ -50,8 +51,25 @@ export function WorldBackdrop({ state }: { state: GameState | null }) {
       const reveal = still ? 1 : Math.min(1, (now - l.born) / 1200);
       for (const m of meshes) { m.uniforms.uTime.value = t; m.uniforms.uViewport.value.copy(px.low); m.uniforms.uReveal.value = reveal; }
       l.world?.update(t, dt); l.avatar?.update(t, dt);
-      cam.state.yaw = Math.PI / 4 + (still ? 0 : t * 0.05);
-      cam.target.set(0, 1.5, 0);
+      // frame the current scope (the bedroom close up, the city wide) with a gentle sway instead of an orbit
+      const f = l.world?.framing;
+      const k = Math.min(1, dt * 3);
+      const sway = still ? 0 : Math.sin(t * 0.25) * 0.06;
+      if (f) {
+        // framings are authored for landscape; on a tall phone widen the view so the whole space still fits
+        const aspect = px.low.x / px.low.y;
+        const portrait = aspect < 1;
+        const vh = f.viewHeight * Math.max(1, 1.5 / aspect) * (portrait ? 0.7 : 1);
+        cam.state.viewHeight += (vh - cam.state.viewHeight) * k;
+        // the slip covers the lower half on phones: lift the scene into the visible top part
+        const lift = portrait ? cam.state.viewHeight * 0.1 : 0;
+        upAxis.setFromMatrixColumn(cam.camera.matrixWorld, 1);
+        cam.target.lerp(new THREE.Vector3(...f.target).addScaledVector(upAxis, -lift), k);
+        cam.state.yaw += (f.yaw + sway - cam.state.yaw) * k;
+      } else {
+        cam.state.yaw = Math.PI / 4 + sway;
+        cam.target.set(0, 1.5, 0);
+      }
       cam.update(px.low.x / px.low.y, px.low.y);
       for (const m of meshes) m.sort(cam.camera);
       px.render(scene, cam.camera);

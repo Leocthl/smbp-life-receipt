@@ -21,6 +21,9 @@ if (look === 'stage') {
 } else if (look === 'yearend' || look === 'ending') {
   root.style.cssText = 'position:fixed;inset:0';
   import('./world3d/cutscene/lookCutscene').then((m) => m.mountLookCutscene(root, look));
+} else if (look === 'mascot') {
+  root.style.cssText = 'position:fixed;inset:0;overflow:auto;background:#cdeeff';
+  import('./ui/mascot/lookMascot').then((m) => m.mountLookMascot(root));
 } else if (look === 'world') {
   root.style.cssText = 'position:fixed;inset:0';
   import('./world3d/lookWorld').then((m) => m.mountLookWorld(root));

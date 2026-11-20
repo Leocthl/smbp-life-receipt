@@ -26,7 +26,7 @@ export function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls: string, t
 }
 
 export function createOverlay(o: OverlayOptions): Overlay {
-  const host = document.querySelector<HTMLElement>('.ml-stage') ?? document.body;
+  const host = document.querySelector<HTMLElement>('.ml-world__canvas')?.parentElement ?? document.body;
   const root = el('div', 'ml-cut');
   const subtitle = el('div', 'ml-cut-line');
   subtitle.setAttribute('aria-live', 'polite');

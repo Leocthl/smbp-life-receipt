@@ -13,13 +13,16 @@ export interface PanelOpts {
   mask?: (u: number, v: number) => boolean;
 }
 
+/** Shade towards a cool slate instead of scaling lightness, so pastel walls stay pastel in shadow. */
+const coolShade = (hex: number, shade: number) => (shade >= 1 ? hex : mix(hex, 0x4a5578, Math.min(0.6, (1 - shade) * 0.85)));
+
 const channel = (hex: number, shift: number) => (hex >> shift) & 255;
 
 export function mix(a: number, b: number, t: number): number {
   const m = (s: number) => Math.round(channel(a, s) + (channel(b, s) - channel(a, s)) * t);
   return (m(16) << 16) | (m(8) << 8) | m(0);
 }
-export const darken = (hex: number, k: number) => mix(hex, 0x14161f, k);
+export const darken = (hex: number, k: number) => mix(hex, 0x2b3a55, k);
 export const lighten = (hex: number, k: number) => mix(hex, 0xffffff, k);
 export const smooth = (v: number) => { const t = Math.max(0, Math.min(1, v)); return t * t * (3 - 2 * t); };
 export const stripes = (a: number, b: number, n: number): ColorFn => (u) => (Math.floor(u * n) % 2 === 0 ? a : b);
@@ -38,7 +41,7 @@ export function panel(b: Builder, axis: Axis, c: Vec3, w: number, h: number, col
     const hex = typeof color === 'function' ? color(fu, fv) : color;
     const p: [number, number, number] = axis === 'z' ? [c[0] + u, c[1] + v, c[2]] : axis === 'x' ? [c[0], c[1] + v, c[2] + u] : [c[0] + u, c[1], c[2] + v];
     const s: [number, number, number] = axis === 'z' ? [su, sv, t] : axis === 'x' ? [t, sv, su] : [su, t, sv];
-    b.add({ p, s, color: b.vary(hex, o.jitter ?? 0.03, o.shade ?? 1), opacity: o.opacity ?? 0.95, sway: o.sway });
+    b.add({ p, s, color: b.vary(coolShade(hex, o.shade ?? 1), o.jitter ?? 0.03, 1), opacity: o.opacity ?? 0.95, sway: o.sway });
   }
 }
 
@@ -52,7 +55,7 @@ export function line(b: Builder, a: Vec3, e: Vec3, color: number, size = 0.05, s
   }
 }
 
-export interface BoxOpts extends PanelOpts { top?: number; edge?: number | false }
+export interface BoxOpts extends PanelOpts { top?: number; edge?: number | false; /** no face shading: big pastel walls that must stay one clean colour */ flat?: boolean }
 
 /** Dark contour along the visible edges of a box, so every building reads against the next one. */
 export function outline(b: Builder, cx: number, cz: number, w: number, d: number, y0: number, h: number, color: number, k = 0.55): void {
@@ -65,18 +68,18 @@ export function outline(b: Builder, cx: number, cz: number, w: number, d: number
 
 /** Five-sided box (top and four walls) with a dark contour. */
 export function box(b: Builder, cx: number, cz: number, w: number, d: number, y0: number, h: number, color: number, o: BoxOpts = {}): void {
-  const dens = o.density ?? 40, hid = { ...o, density: dens * 0.5 };
+  const dens = o.density ?? 40, hid = { ...o, density: dens * 0.5 }, sh = (v: number) => (o.flat ? 1 : v);
   panel(b, 'y', [cx, y0 + h, cz], w, d, o.top ?? lighten(color, 0.12), { ...o, shade: 1 });
-  panel(b, 'z', [cx, y0 + h / 2, cz + d / 2], w, h, color, { ...o, shade: 0.9 });
-  panel(b, 'x', [cx + w / 2, y0 + h / 2, cz], d, h, color, { ...o, shade: 0.68 });
-  panel(b, 'z', [cx, y0 + h / 2, cz - d / 2], w, h, color, { ...hid, shade: 0.72 });
-  panel(b, 'x', [cx - w / 2, y0 + h / 2, cz], d, h, color, { ...hid, shade: 0.58 });
+  panel(b, 'z', [cx, y0 + h / 2, cz + d / 2], w, h, color, { ...o, shade: sh(0.9) });
+  panel(b, 'x', [cx + w / 2, y0 + h / 2, cz], d, h, color, { ...o, shade: sh(0.8) });
+  panel(b, 'z', [cx, y0 + h / 2, cz - d / 2], w, h, color, { ...hid, shade: sh(0.72) });
+  panel(b, 'x', [cx - w / 2, y0 + h / 2, cz], d, h, color, { ...hid, shade: sh(0.7) });
   if (o.edge !== false) outline(b, cx, cz, w, d, y0, h, color, o.edge ?? 0.55);
 }
 
 /** Soft dark footprint on the ground so buildings sit down. */
 export function shadow(b: Builder, cx: number, cz: number, w: number, d: number, pad = 0.6, opacity = 0.35): void {
-  panel(b, 'y', [cx + pad * 0.3, 0.025, cz + pad * 0.3], w + pad * 2, d + pad * 2, 0x14161f, { density: 5, opacity, thick: 0.01, jitter: 0 });
+  panel(b, 'y', [cx + pad * 0.3, 0.025, cz + pad * 0.3], w + pad * 2, d + pad * 2, 0x2b3a55, { density: 5, opacity, thick: 0.01, jitter: 0 });
 }
 
 /** Circles that approximate a rectangle, for the stage's round colliders. */

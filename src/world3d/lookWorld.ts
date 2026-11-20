@@ -3,14 +3,27 @@ import type { Regime } from '../engine/types';
 import type { GameState } from '../engine/types';
 import { buildAvatar } from './avatar';
 import type { AvatarHandle, WorldHandle } from './contracts';
-import type { WorldDescriptor } from './descriptor';
+import type { Memento, Scope, WorldDescriptor } from './descriptor';
+import type { Category, Tag } from '../engine/types';
 import { createDioramaCamera, createPixelRenderer } from './pixel';
 import { buildWorld } from './world';
+
+const SCOPES_LIST: readonly Scope[] = ['room', 'home', 'block', 'district', 'city'];
+const TAGS: Tag[] = ['save', 'invest', 'risky', 'spend', 'fun', 'family', 'career', 'debt', 'insure', 'status', 'safe', 'hold', 'sell', 'work'];
+const CATS: Category[] = ['daily', 'investing', 'career', 'health', 'family', 'friends', 'housing'];
+
+/** n fake decisions with mixed tags, so every keepsake can be seen. */
+function fakeMementos(n: number, age: number): Memento[] {
+  return Array.from({ length: n }, (_, i) => ({
+    turn: i * 2, age: Math.max(18, age - Math.round(((n - i) * (age - 18)) / Math.max(1, n))), eventId: 'evt_' + i, choiceId: 'c' + (i % 3),
+    category: CATS[i % CATS.length], tag: TAGS[i % TAGS.length], netWorthDelta: ((i * 7919) % 50) * 1000 * (TAGS[i % TAGS.length] === 'debt' ? -1 : 1),
+  }));
+}
 
 // ?look=world : the neighbourhood and the character, with a fake descriptor taken from the query string.
 //   &home=parents|rent|owner &regime=bull|normal|correction|crash|recovery &job=student|employed|unemployed|retired
 //   &age=30 &wealth=.. &safety=.. &joy=.. &bonds=.. &freedom=.. &growth=..  (0..100)
-//   &partner=1 &kids=1 &car=1 &hustle=1 &insured=1 &burnt=1 &bankrupt=1 &life=0..1 &vh=30 &orbit=0 &yaw=45 &walk=1
+//   &partner=1 &kids=1 &car=1 &hustle=1 &insured=1 &burnt=1 &bankrupt=1 &life=0..1 &vh=30 &orbit=0 &yaw=45 &walk=1 &solo=1 (character only) &tx= &ty= &tz= (camera target)
 
 const REGIMES: Regime[] = ['bull', 'normal', 'correction', 'crash', 'recovery'];
 const JOBS: GameState['job'][] = ['student', 'employed', 'unemployed', 'retired'];
@@ -31,7 +44,7 @@ export function descriptorFromQuery(p: URLSearchParams): WorldDescriptor {
     burntOut: flag('burnt'), bankrupt: flag('bankrupt'), regime: pick(p.get('regime'), REGIMES, 'normal'),
     invested: num('invested', 0.4), lifestyle: num('life', 0.3),
     q: { wealth: num('wealth', 50), safety: num('safety', 50), joy: num('joy', 60), bonds: num('bonds', 50), freedom: num('freedom', 70), growth: num('growth', 50) },
-    done: false, scope: 'city', mementos: [],
+    done: false, scope: pick(p.get('scope'), SCOPES_LIST, 'city'), mementos: fakeMementos(Math.max(0, Math.floor(num('n', 0))), age),
   };
 }
 
@@ -44,17 +57,20 @@ export function mountLookWorld(container: HTMLElement) {
   const avatar: AvatarHandle = buildAvatar(d, 11);
   scene.background = new THREE.Color(world.sky);
   const solo = params.get('solo') === '1'; // only the character, on a plain ground, for close-up shots
-  if (solo) scene.background = new THREE.Color(0x5b6488); else scene.add(world.group);
+  if (solo) scene.background = new THREE.Color(0x9aa8c4); else scene.add(world.group);
   scene.add(avatar.group);
   const home = world.spots.find((s) => s.id === 'home');
-  if (solo) avatar.group.position.set(0, 0, 0); else avatar.group.position.set((home?.x ?? 0) + 1.6, 0, (home?.z ?? 0) + 1.2);
+  const small = (world.framing?.viewHeight ?? 99) < 20; // indoors: stand on the home spot
+  if (solo) avatar.group.position.set(0, 0, 0); else avatar.group.position.set((home?.x ?? 0) + (small ? 0 : 1.6), 0, (home?.z ?? 0) + (small ? 0 : 1.2));
   avatar.group.rotation.y = Math.PI / 4;
   avatar.setWalking(params.get('walk') === '1');
   const aspect = window.innerWidth / window.innerHeight;
-  const cam = createDioramaCamera(Number(params.get('vh')) || Math.max(36, 44 / aspect));
+  const fr = world.framing ?? { viewHeight: 36, target: [0, 4, -1] as [number, number, number], yaw: Math.PI / 4 };
   const q = (k: string, f: number) => (params.has(k) ? Number(params.get(k)) : f);
-  cam.target.set(q('tx', 0), q('ty', 4), q('tz', -1));
-  const baseYaw = (Number(params.get('yaw')) || 45) * (Math.PI / 180), orbit = params.get('orbit') !== '0';
+  const portrait = aspect < 1 ? 1 + (1 - aspect) * 1.8 : 1; // a phone shows less width, so back off
+  const cam = createDioramaCamera(q('vh', fr.viewHeight * portrait));
+  cam.target.set(q('tx', fr.target[0]), q('ty', fr.target[1]), q('tz', fr.target[2]));
+  const baseYaw = params.has('yaw') ? Number(params.get('yaw')) * (Math.PI / 180) : fr.yaw, orbit = params.get('orbit') === '1'; // framing is fixed by default, like the stage
   const meshes = [...world.meshes, ...avatar.meshes];
   const start = performance.now();
   let last = start, raf = 0, first = true;

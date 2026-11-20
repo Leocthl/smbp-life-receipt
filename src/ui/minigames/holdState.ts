@@ -23,6 +23,11 @@ export function holdValue(s: HoldState): number {
   return s.cash + s.units * s.path[s.idx];
 }
 
+/** What buying everything at the start and sitting still would be worth now. */
+export function holdBench(s: HoldState): number {
+  return (START_CASH * s.path[s.idx]) / s.path[0];
+}
+
 export function indexAt(t: number): number {
   return clamp(Math.floor((t / HOLD_SECONDS) * HOLD_STEPS), 0, HOLD_STEPS);
 }

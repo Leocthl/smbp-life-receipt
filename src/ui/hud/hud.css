@@ -8,7 +8,7 @@
 .ml-hud--bare { justify-content: flex-end; left: auto; right: 9px; }
 .ml-hud__main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
 .ml-hud__row { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.ml-hud__row .ml-hud__counter { flex: 1 1 0; }
+.ml-hud__row .ml-hud__counter { flex: 1 1 0; max-width: 200px; }
 .ml-hud__row--meta { gap: 6px; }
 .ml-hud__hex { flex: none; }
 
@@ -29,7 +29,8 @@
 .ml-hud__pips { display: flex; gap: 1px; }
 .ml-hud__pips span { width: 3px; height: 3px; background: color-mix(in srgb, var(--ml-ink) 18%, var(--ml-cream)); }
 .ml-hud__pips span.is-on { background: var(--ml-ink); }
-.ml-hud__meter[aria-label] .ml-hud__pips span.is-on { background: var(--ml-coral); }
+.ml-hud__meter .ml-hud__pips span.is-on { background: var(--ml-coral); }
+.ml-hud__meter[data-testid="stat-relationships"] .ml-hud__pips span.is-on { background: var(--ml-turquoise); }
 .ml-hud__weather { padding: 2px 5px; background: var(--ml-sky); }
 .ml-hud__runway { flex-direction: column; align-items: flex-start; gap: 3px; padding-top: 4px; }
 .ml-hud__runway--low { color: var(--ml-stamp); }
@@ -40,6 +41,6 @@ body:not(.ml-is-3d) .ml-hud--nolang { right: auto; }
 
 @media (min-width: 900px) {
   body.ml-is-3d .ml-hud { top: 16px; left: 16px; right: auto; width: min(520px, calc(100vw - 500px)); }
-  body.ml-is-3d .ml-hud--nolang { width: min(520px, calc(100vw - 580px)); left: 70px; }
+  body.ml-is-3d .ml-hud--nolang { width: min(520px, calc(100vw - 620px)); left: 116px; }
   body.ml-is-3d .ml-hud--bare { left: 16px; }
 }

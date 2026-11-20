@@ -1,4 +1,5 @@
 import { ART_H } from './types';
+import type { Spark } from './fx';
 
 export type Kind = 'pay' | 'need' | 'want';
 
@@ -24,6 +25,8 @@ export interface BudgetState {
   needs: number;
   wants: number;
   fees: number;
+  /** catch sparkles, purely visual */
+  sparks: Spark[];
 }
 
 export const BUDGET_SECONDS = 20;

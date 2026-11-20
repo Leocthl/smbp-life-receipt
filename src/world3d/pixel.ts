@@ -4,14 +4,15 @@ import * as THREE from 'three';
 // nearest-neighbour sampling, ordered dithering and a limited palette. The camera is snapped to the pixel grid so
 // still scenery does not shimmer when the camera pans.
 
-/** Limited palette: Hong Kong at dusk. Night teals, tram green, neon red and pink, cha chaan teng cream, harbour blue. */
+/** Limited palette: bright daytime Hong Kong. Sky, harbour turquoise, fresh greens, coral and peach, sunny yellow, lilac; the darker slates are for storms and ink outlines. */
 export const PALETTE = [
-  0x14161f, 0x23263a, 0x3a3f5c, 0x5b6488, 0x8a95b8, 0xc4cbe0, 0xf4f1e6, 0xffffff,
-  0x1d3b3a, 0x2f5d50, 0x4f8a6b, 0x8cbf7a, 0xd6e8a8,
-  0x2a3f6e, 0x3c6ea8, 0x6fb0d8, 0xb5e2f0,
-  0x5a2a2e, 0x9b3b3b, 0xd8504a, 0xff7b6b, 0xffb3a7,
-  0x6b3f2a, 0xa86a3a, 0xe0a050, 0xffd27a, 0xfff0b8,
-  0x6e2a5e, 0xc0458f, 0xff8ad1, 0x5a4a8a, 0x9c84d4,
+  0x2b3a55, 0x4a5578, 0x1f2a44, 0x6b789c, 0x9aa8c4, 0xc9d3e6, 0xfff6dc, 0xffffff,
+  0x8fd3ff, 0xcdeeff, 0x4cc3d9, 0x2a9fc0, 0x3d7fc4,
+  0x7ed07a, 0xb6e88a, 0x3f9f5a, 0x2a6f4a, 0xe4f5b0,
+  0xff8a6b, 0xffc29b, 0xd9553f, 0xffe0c8,
+  0xffd85a, 0xf2a93a, 0xfff0a0,
+  0xb9a7ff, 0x8a73e0, 0xe4dcff,
+  0xa8744a, 0x6f4a32, 0xff9ec4, 0xe8a77a,
 ];
 
 const FRAGMENT = `
@@ -71,8 +72,8 @@ export function createPixelRenderer(container: HTMLElement): PixelRenderer {
   const low = new THREE.Vector2(4, 4);
   const target = new THREE.WebGLRenderTarget(4, 4, { samples: 4, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter });
   const uniforms: Record<string, THREE.IUniform> = {
-    map: { value: target.texture }, lowSize: { value: low }, dither: { value: 0.03 }, vignette: { value: 0.3 },
-    palette: { value: PALETTE.map(srgb) }, fade: { value: 0 }, fadeColor: { value: srgb(0x14161f) },
+    map: { value: target.texture }, lowSize: { value: low }, dither: { value: 0.03 }, vignette: { value: 0.15 },
+    palette: { value: PALETTE.map(srgb) }, fade: { value: 0 }, fadeColor: { value: srgb(0x2b3a55) },
   };
   const material = new THREE.ShaderMaterial({
     uniforms, fragmentShader: FRAGMENT,

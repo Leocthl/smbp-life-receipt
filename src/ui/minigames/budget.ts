@@ -1,8 +1,10 @@
 import { makeRng, streamSeed, type Rng } from '../../engine/rng';
 import { drawBudget } from './budgetDraw';
 import { BudgetOverlay } from './budgetOverlay';
+import { C, type Colour } from './draw';
+import { burst, stepSparks } from './fx';
 import { BASKET_Y, BUDGET_SECONDS, TARGET_RATE, budgetRate, type BudgetState, type Falling, type Kind } from './budgetState';
-import { ART_H, NO_INPUT, clamp, type GameDef, type Input, type MiniGameResult } from './types';
+import { ART_H, ART_W, NO_INPUT, clamp, type GameDef, type Input, type MiniGameResult } from './types';
 
 // Month-end budget: catch pay and needs, dodge wants. Savings rate is the score. Pure sim, no DOM.
 
@@ -17,6 +19,8 @@ const SPECS: readonly Spec[] = [
   { kind: 'want', sprite: 'gadget', value: 5, weight: 2 },
 ];
 
+const KIND_COLOUR: Record<Kind, Colour> = { pay: C.sun, need: C.turquoise, want: C.coral };
+
 const SPAWN_EVERY = 0.6;
 const FALL_SPEED = 38;
 const WALK_SPEED = 0.9;
@@ -27,7 +31,7 @@ const WALLET_MIN = 0.08;
 const WALLET_MAX = 0.92;
 
 export function initBudget(seed: number): BudgetState {
-  return { t: 0, rng: streamSeed(seed, 'budget'), nextId: 1, nextAt: 0.5, wallet: 0.5, items: [], income: 0, needs: 0, wants: 0, fees: 0 };
+  return { t: 0, rng: streamSeed(seed, 'budget'), nextId: 1, nextAt: 0.5, wallet: 0.5, items: [], income: 0, needs: 0, wants: 0, fees: 0, sparks: [] };
 }
 
 function spawnDue(s: BudgetState, t: number, rng: Rng): { fresh: Falling[]; nextAt: number; nextId: number } {
@@ -64,6 +68,7 @@ export function stepBudget(s: BudgetState, input: Input, dt: number): BudgetStat
     needs: s.needs + sumOf(caught, 'need') + sumOf(missed, 'need'),
     wants: s.wants + sumOf(caught, 'want'),
     fees: s.fees + sumOf(missed, 'need') * LATE_FEE,
+    sparks: caught.reduce((acc, i) => burst(acc, i.x * ART_W, BASKET_Y, KIND_COLOUR[i.kind], 5), stepSparks(s.sparks, dt)),
   };
 }
 

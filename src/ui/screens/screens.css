@@ -25,7 +25,7 @@
 .ml-summary .ml-btn, .ml-ending .ml-btn { margin-top: 18px; }
 
 /* ending */
-.ml-ending .ml-stamp { top: 70px; right: 14px; font-size: 19px; max-width: 46%; text-align: center; line-height: 1.25; }
+.ml-ending .ml-stamp { top: 16px; right: 14px; font-size: 19px; max-width: 46%; text-align: center; line-height: 1.25; }
 .ml-ending__title { font-size: 26px; margin: 4px 3px 0; }
 .ml-ending__ages { font-size: 14px; color: var(--ml-muted); margin: 2px 3px 18px; }
 .ml-ending__label { display: inline-block; font-size: 30px; font-weight: 900; margin: 22px 3px 10px; padding: 2px 10px; background: var(--ml-sun); box-shadow: var(--ml-frame); }

@@ -9,6 +9,13 @@ export const SEA_Z = 9.7;
 export const HOME_X = -8.875;
 export const HOME_DOOR = { x: HOME_X, z: -7.7 };
 
+export interface Extent { x0: number; x1: number; z0: number; z1: number }
+/** The land that exists at each scope. The block ends before the harbour; the indoor scopes use the whole neighbourhood only as a fallback. */
+export const EXTENTS = {
+  room: { x0: -14, x1: 14, z0: -14, z1: 9.7 }, home: { x0: -14, x1: 14, z0: -14, z1: 9.7 },
+  block: { x0: -14, x1: 14, z0: -14, z1: 4.4 }, district: { x0: -14, x1: 14, z0: -14, z1: 9.7 }, city: { x0: -14, x1: 14, z0: -14, z1: 9.7 },
+} satisfies Record<string, Extent>;
+
 export const SPOTS: Spot[] = [
   { id: 'home', x: HOME_X, z: -7.7, r: 1.6 },
   { id: 'cafe', x: -1.5, z: -7.7, r: 1.5 },

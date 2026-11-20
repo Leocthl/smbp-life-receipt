@@ -15,7 +15,8 @@ export const C = {
   mist: '#e3e9f4',
 } as const;
 
-export type Colour = (typeof C)[keyof typeof C];
+/** Any CSS colour: the named palette above, or a storm tone used only in the crash moment. */
+export type Colour = string;
 
 /** Fill an art-pixel rectangle. */
 export function rect(ctx: CanvasRenderingContext2D, colour: Colour, x: number, y: number, w: number, h: number): void {

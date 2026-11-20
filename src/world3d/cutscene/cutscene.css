@@ -100,4 +100,4 @@
 }
 
 /* the stage's thumb joystick has no job while a cutscene plays */
-.ml-stage:has(.ml-cut) .ml-stage-joy { display: none; }
+:has(> .ml-cut) > .ml-stage-joy { display: none; }

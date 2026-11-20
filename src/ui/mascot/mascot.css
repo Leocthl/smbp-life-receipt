@@ -1,0 +1,7 @@
+/* Slip the receipt mascot. Scale comes from --ml-ms (CSS pixels per art pixel); integers keep the pixels crisp. */
+.ml-mascot {
+  display: block;
+  width: calc(56px * var(--ml-ms, 3));
+  height: calc(56px * var(--ml-ms, 3));
+  image-rendering: pixelated;
+}

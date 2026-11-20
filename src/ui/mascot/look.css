@@ -1,0 +1,9 @@
+.ml-look { min-height: 100vh; padding: 16px; background: #cdeeff; font-family: system-ui, sans-serif; color: #2b3a55; --ml-ms: 3; }
+.ml-look-cycle { margin: 0 auto 16px; text-align: center; }
+.ml-look-cycle .ml-mascot { margin: 0 auto; --ml-ms: 5; }
+.ml-look-cycle figcaption { font-weight: 700; }
+.ml-look-sheet { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 12px; }
+.ml-look-sheet li { background: #fffaf0; border: 3px solid #2b3a55; padding: 6px; text-align: center; font-weight: 700; }
+.ml-look-sheet .ml-mascot { margin: 0 auto; }
+.ml-look-chats { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; max-width: 980px; margin: 24px auto; padding: 0 8px; background: #cdeeff; }
+

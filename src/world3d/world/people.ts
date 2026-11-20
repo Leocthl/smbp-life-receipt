@@ -5,8 +5,8 @@ import type { Ctx } from './ctx';
 // Everyone who stands around in the neighbourhood. Who is there depends on the descriptor.
 
 const FRIEND_SLOTS: [number, number][] = [[-7.3, -7.5], [-10.5, -7.4], [-7.9, -6.4], [-10.0, -6.3], [-6.5, -8.6]];
-const SUIT = [0x23263a, 0x3a3f5c, 0x2a3f6e];
-const WHITE_HAIR = 0xc4cbe0;
+const SUIT = [0x2b3a55, 0x6b789c, 0x3d7fc4];
+const WHITE_HAIR = 0xc9d3e6;
 
 function around(ctx: Ctx, cx: number, cz: number, n: number, rx: number, rz: number, o: (i: number) => Parameters<typeof bystander>[3] = () => ({})): void {
   for (let i = 0; i < n; i += 1) bystander(ctx.L.crowd, cx + (ctx.rnd() - 0.5) * 2 * rx, cz + (ctx.rnd() - 0.5) * 2 * rz, o(i));
@@ -14,11 +14,11 @@ function around(ctx: Ctx, cx: number, cz: number, n: number, rx: number, rz: num
 
 function family(ctx: Ctx): void {
   const { crowd, glow } = ctx.L, d = ctx.d;
-  if (d.partner) figure(crowd, HOME_DOOR.x + 0.9, HOME_DOOR.z + 0.1, { top: 0xff8ad1, pants: 0x3a3f5c, hair: 0x14161f });
+  if (d.partner) figure(crowd, HOME_DOOR.x + 0.9, HOME_DOOR.z + 0.1, { top: 0xff9ec4, pants: 0x6b789c, hair: 0x2b3a55 });
   if (d.kids > 0) {
-    figure(crowd, HOME_DOOR.x - 0.7, HOME_DOOR.z + 0.2, { top: 0xffd27a, pants: 0x2a3f6e, hair: 0x14161f, scale: 0.62 });
-    glow.blob(HOME_DOOR.x - 0.45, 1.5, HOME_DOOR.z + 0.2, 0.17, 0.2, 0.17, 18, 0xd8504a, 0.06);
-    ctx.L.solid.add({ p: [HOME_DOOR.x - 0.58, 0.9, HOME_DOOR.z + 0.2], s: [0.012, 0.3, 0.012], color: 0xf4f1e6 });
+    figure(crowd, HOME_DOOR.x - 0.7, HOME_DOOR.z + 0.2, { top: 0xffd85a, pants: 0x3d7fc4, hair: 0x2b3a55, scale: 0.62 });
+    glow.blob(HOME_DOOR.x - 0.45, 1.5, HOME_DOOR.z + 0.2, 0.17, 0.2, 0.17, 18, 0xd9553f, 0.06);
+    ctx.L.solid.add({ p: [HOME_DOOR.x - 0.58, 0.9, HOME_DOOR.z + 0.2], s: [0.012, 0.3, 0.012], color: 0xfff6dc });
   }
 }
 
@@ -29,12 +29,13 @@ function friends(ctx: Ctx): void {
 
 function work(ctx: Ctx): void {
   const job = ctx.d.job;
-  if (job === 'employed') around(ctx, 10.4, -7.6, 7, 2.1, 0.6, (i) => ({ top: i % 2 ? 0xf4f1e6 : 0x6fb0d8, pants: SUIT[i % 3] }));
-  else if (job === 'unemployed') around(ctx, 10.4, -7.6, 1, 0.5, 0.3, () => ({ top: 0x5b6488, pants: 0x23263a }));
-  else if (job === 'retired') around(ctx, 10.4, -7.6, 3, 2, 0.6, (i) => ({ top: i % 2 ? 0xf4f1e6 : 0x6fb0d8, pants: SUIT[i % 3] }));
+  if (job === 'employed') around(ctx, 10.4, -7.6, 7, 2.1, 0.6, (i) => ({ top: i % 2 ? 0xfff6dc : 0x8fd3ff, pants: SUIT[i % 3] }));
+  else if (job === 'unemployed') around(ctx, 10.4, -7.6, 1, 0.5, 0.3, () => ({ top: 0x9aa8c4, pants: 0x2b3a55 }));
+  else if (job === 'retired') around(ctx, 10.4, -7.6, 3, 2, 0.6, (i) => ({ top: i % 2 ? 0xfff6dc : 0x8fd3ff, pants: SUIT[i % 3] }));
   const student = job === 'student';
-  around(ctx, -7.7, 5.9, student ? 9 : 2, 1.2, 2.4, () => ({ pack: 0xd8504a }));
-  if (student) around(ctx, -7.7, 5.9, 3, 1.2, 2.4, () => ({ pack: 0x4f8a6b, top: 0xffd27a }));
+  if (ctx.ext.z1 < 9) return;
+  around(ctx, -7.7, 5.9, student ? 9 : 2, 1.2, 2.4, () => ({ pack: 0xd9553f }));
+  if (student) around(ctx, -7.7, 5.9, 3, 1.2, 2.4, () => ({ pack: 0x7ed07a, top: 0xffd85a }));
 }
 
 function town(ctx: Ctx): void {
@@ -43,8 +44,8 @@ function town(ctx: Ctx): void {
   around(ctx, 6.5, 1.8, 5, 3.4, 1.2);
   around(ctx, -2.5, 3.5, retired ? 2 : 3, 2.5, 2.5);
   if (retired) {
-    around(ctx, -4.2, 4.2, 2, 0.15, 0.05, () => ({ hair: WHITE_HAIR, top: 0x9c84d4 }));
-    around(ctx, -0.8, 2.3, 1, 0.05, 0.05, () => ({ hair: WHITE_HAIR, top: 0xa86a3a }));
+    around(ctx, -4.2, 4.2, 2, 0.15, 0.05, () => ({ hair: WHITE_HAIR, top: 0xb9a7ff }));
+    around(ctx, -0.8, 2.3, 1, 0.05, 0.05, () => ({ hair: WHITE_HAIR, top: 0xa8744a }));
   }
   around(ctx, 4.25, -7.3, 2, 1.2, 0.3, (i) => ({ pants: SUIT[i % 3] }));
 }
