@@ -7,11 +7,15 @@ import { EndingScreen } from './screens/EndingScreen';
 import { ResultScreen } from './screens/ResultScreen';
 import { IntroScreen, StartScreen } from './screens/StartScreens';
 import { SummaryScreen } from './screens/SummaryScreen';
+import { WorldBackdrop } from './WorldBackdrop';
 import { GoalScreen } from './screens/GoalScreen';
 import { advance, afterSummary, beginTurn, choose, pickGoal, startSession, type Session } from './session';
 
 const params = new URLSearchParams(window.location.search);
 const seedParam = Number(params.get('seed'));
+/** ?classic=1 keeps the original 2D receipt game without the 3D world. */
+const is3d = params.get('classic') !== '1';
+if (is3d) document.body.classList.add('ml-is-3d');
 const randomSeed = () => Math.floor(Math.random() * 1_000_000) + 1;
 
 function initialLang(): Lang {
@@ -52,6 +56,7 @@ export function App() {
 
   return (
     <I18nProvider value={i18n}>
+      {is3d && <WorldBackdrop state={session?.state ?? null} />}
       <div className="ml-app">
         <div className="ml-app__bar">
           <button type="button" className="ml-lang" data-testid="lang" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>{i18n.t('app.lang')}</button>

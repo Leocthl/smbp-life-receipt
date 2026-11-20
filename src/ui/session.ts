@@ -3,6 +3,10 @@ import { drawCards, eventById, resolveChoice, type Card } from '../engine/events
 import { newGame } from '../engine/sim';
 import { endTurn } from '../engine/turn';
 import type { ChoiceResult, GameEvent, GameState, Goal, TraitId, TurnSummary } from '../engine/types';
+import { qualities, type Qualities } from '../world3d/qualities';
+
+/** One decision and what it did to the six qualities (shown on the hexagon and the trail). */
+export interface TrailEntry { turn: number; age: number; eventId: string; choiceId: string; before: Qualities; after: Qualities }
 
 /** What the screen shows. The session is a small state machine over the pure engine. */
 export type Screen =
@@ -21,12 +25,14 @@ export interface Session {
   screen: Screen;
   /** notices and reveals from turns that ended without a year-end summary (uni first semester) */
   carried: { notices: string[]; reveals: TraitId[] };
+  /** every decision with its before/after qualities, oldest first */
+  trail: TrailEntry[];
 }
 
 export const EVENTS: readonly GameEvent[] = ALL_EVENTS;
 
 export function startSession(seed: number): Session {
-  return { state: newGame(seed), cards: [], index: 0, screen: { kind: 'intro' }, carried: { notices: [], reveals: [] } };
+  return { state: newGame(seed), cards: [], index: 0, screen: { kind: 'intro' }, carried: { notices: [], reveals: [] }, trail: [] };
 }
 
 /** Draw this turn's cards; if there are none, end the turn straight away. */
@@ -40,7 +46,8 @@ export function choose(s: Session, choiceId: string): Session {
   if (s.screen.kind !== 'card') return s;
   const card = s.screen.card;
   const { state, result } = resolveChoice(s.state, EVENTS, card.eventId, choiceId);
-  return { ...s, state, screen: { kind: 'result', card, result } };
+  const entry: TrailEntry = { turn: s.state.turn, age: s.state.age, eventId: card.eventId, choiceId, before: qualities(s.state), after: qualities(state) };
+  return { ...s, state, trail: [...s.trail, entry], screen: { kind: 'result', card, result } };
 }
 
 /** After a result: next card, or end the turn. */
