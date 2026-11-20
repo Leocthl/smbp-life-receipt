@@ -13,9 +13,6 @@ export interface PanelOpts {
   mask?: (u: number, v: number) => boolean;
 }
 
-/** Shade towards a cool slate instead of scaling lightness, so pastel walls stay pastel in shadow. */
-const coolShade = (hex: number, shade: number) => (shade >= 1 ? hex : mix(hex, 0x4a5578, Math.min(0.6, (1 - shade) * 0.85)));
-
 const channel = (hex: number, shift: number) => (hex >> shift) & 255;
 
 export function mix(a: number, b: number, t: number): number {
@@ -28,20 +25,30 @@ export const smooth = (v: number) => { const t = Math.max(0, Math.min(1, v)); re
 export const stripes = (a: number, b: number, n: number): ColorFn => (u) => (Math.floor(u * n) % 2 === 0 ? a : b);
 export const checker = (a: number, b: number, nu: number, nv: number): ColorFn => (u, v) => ((Math.floor(u * nu) + Math.floor(v * nv)) % 2 === 0 ? a : b);
 
+/** The rectangle's own volume, so its splats are cut to a crisp edge. */
+function panelClip(axis: Axis, c: Vec3, w: number, h: number, t: number): { lo: [number, number, number]; hi: [number, number, number] } {
+  const half: Vec3 = axis === 'z' ? [w / 2, h / 2, t] : axis === 'x' ? [t, h / 2, w / 2] : [w / 2, t, h / 2];
+  return { lo: [c[0] - half[0], c[1] - half[1], c[2] - half[2]], hi: [c[0] + half[0], c[1] + half[1], c[2] + half[2]] };
+}
+
 /** A flat rectangle of splats. axis = its normal; w runs along x (or z for an x-plane), h along y (or z for a y-plane). */
 export function panel(b: Builder, axis: Axis, c: Vec3, w: number, h: number, color: number | ColorFn, o: PanelOpts = {}): void {
   const density = o.density ?? 40;
   const nu = Math.max(1, Math.round(w * Math.sqrt(density))), nv = Math.max(1, Math.round(h * Math.sqrt(density)));
   const du = w / nu, dv = h / nv, t = o.thick ?? 0.02;
+  const patterned = typeof color === 'function' || o.mask !== undefined || (o.opacity ?? 0.95) < 0.6; // patterns, cut-outs and glass/light must not overlap
+  const n: [number, number, number] = axis === 'z' ? [0, 0, 1] : axis === 'x' ? [1, 0, 0] : [0, 1, 0];
   for (let i = 0; i < nu; i += 1) for (let j = 0; j < nv; j += 1) {
-    const fu = (i + 0.1 + b.rnd() * 0.8) / nu, fv = (j + 0.1 + b.rnd() * 0.8) / nv;
-    if (o.mask && !o.mask(fu, fv)) continue;
+    const jit = patterned ? 0 : 0.4;
+    const fu = (i + 0.5 + (b.rnd() - 0.5) * jit) / nu, fv = (j + 0.5 + (b.rnd() - 0.5) * jit) / nv;
+    if (o.mask && !o.mask((i + 0.5) / nu, (j + 0.5) / nv)) continue;
     const u = (fu - 0.5) * w, v = (fv - 0.5) * h;
-    const su = du * 0.55 * (0.85 + b.rnd() * 0.3), sv = dv * 0.55 * (0.85 + b.rnd() * 0.3);
-    const hex = typeof color === 'function' ? color(fu, fv) : color;
+    const su = du * 0.58, sv = dv * 0.58;
+    const hex = typeof color === 'function' ? color((i + 0.5) / nu, (j + 0.5) / nv) : color;
     const p: [number, number, number] = axis === 'z' ? [c[0] + u, c[1] + v, c[2]] : axis === 'x' ? [c[0], c[1] + v, c[2] + u] : [c[0] + u, c[1], c[2] + v];
     const s: [number, number, number] = axis === 'z' ? [su, sv, t] : axis === 'x' ? [t, sv, su] : [su, t, sv];
-    b.add({ p, s, color: b.vary(coolShade(hex, o.shade ?? 1), o.jitter ?? 0.03, 1), opacity: o.opacity ?? 0.95, sway: o.sway });
+    const cell = patterned ? panelClip(axis, [c[0] + (axis === 'x' ? 0 : ((i + 0.5) / nu - 0.5) * w), c[1] + (axis === 'y' ? 0 : ((j + 0.5) / nv - 0.5) * h), c[2] + (axis === 'x' ? ((i + 0.5) / nu - 0.5) * w : axis === 'y' ? ((j + 0.5) / nv - 0.5) * h : 0)], du, dv, t) : panelClip(axis, c, w, h, t);
+    b.add({ p, s, color: hex, opacity: o.opacity ?? 0.95, sway: o.sway, n, clip: cell });
   }
 }
 
@@ -68,13 +75,13 @@ export function outline(b: Builder, cx: number, cz: number, w: number, d: number
 
 /** Five-sided box (top and four walls) with a dark contour. */
 export function box(b: Builder, cx: number, cz: number, w: number, d: number, y0: number, h: number, color: number, o: BoxOpts = {}): void {
-  const dens = o.density ?? 40, hid = { ...o, density: dens * 0.5 }, sh = (v: number) => (o.flat ? 1 : v);
-  panel(b, 'y', [cx, y0 + h, cz], w, d, o.top ?? lighten(color, 0.12), { ...o, shade: 1 });
-  panel(b, 'z', [cx, y0 + h / 2, cz + d / 2], w, h, color, { ...o, shade: sh(0.9) });
-  panel(b, 'x', [cx + w / 2, y0 + h / 2, cz], d, h, color, { ...o, shade: sh(0.8) });
-  panel(b, 'z', [cx, y0 + h / 2, cz - d / 2], w, h, color, { ...hid, shade: sh(0.72) });
-  panel(b, 'x', [cx - w / 2, y0 + h / 2, cz], d, h, color, { ...hid, shade: sh(0.7) });
-  if (o.edge !== false) outline(b, cx, cz, w, d, y0, h, color, o.edge ?? 0.55);
+  const dens = o.density ?? 40, hid = { ...o, density: dens * 0.5 };
+  panel(b, 'y', [cx, y0 + h, cz], w, d, o.top ?? color, { ...o, shade: 1 });
+  panel(b, 'z', [cx, y0 + h / 2, cz + d / 2], w, h, color, { ...o, shade: 1 });
+  panel(b, 'x', [cx + w / 2, y0 + h / 2, cz], d, h, color, { ...o, shade: 1 });
+  panel(b, 'z', [cx, y0 + h / 2, cz - d / 2], w, h, color, { ...hid, shade: 1 });
+  panel(b, 'x', [cx - w / 2, y0 + h / 2, cz], d, h, color, { ...hid, shade: 1 });
+  // outlines come from the pixel pass now (depth/material edges), not from painted splat lines
 }
 
 /** Soft dark footprint on the ground so buildings sit down. */

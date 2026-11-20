@@ -37,7 +37,7 @@ function street(ctx: Ctx): void {
   for (let i = 0; i < 6; i += 1) panel(s, 'y', [2.2, 0.03, ROAD.z0 + 0.35 + i * 0.64], 0.9, 0.3, 0xfff6dc, { density: 60, thick: 0.01 });
   for (let x = -13; x < 14; x += 1.6) panel(s, 'y', [x, 0.03, -6.2 + 0.0], 0.7, 0.07, 0xfff6dc, { density: 80, thick: 0.01, opacity: 0.6 });
   // overhead tram wire
-  line(s, [-14, 4.6, z], [14, 4.6, z], 0x2b3a55, 0.03, 0.12, 0.8);
+  line(s, [-14, 4.6, z], [14, 4.6, z], 0x9aa8c4, 0.03, 0.12, 1);
   for (const x of [-12, -3, 6, 13]) line(s, [x, 0, -2.5], [x, 4.6, -2.5], 0x6b789c, 0.07, 0.08);
 }
 
@@ -54,11 +54,11 @@ function seawall(ctx: Ctx): void {
 function sea(ctx: Ctx): void {
   const { water } = ctx.L, [deep, mid, foam] = ctx.tone.water, rnd = ctx.rnd;
   const rough = ctx.tone.rain ? 0.16 : 0.07;
-  for (let i = 0; i < 4800; i += 1) {
-    const x = -40 + rnd() * 80, z = SEA_Z - 0.3 + rnd() * 28, sz = 0.3 + rnd() * 0.3;
-    water.add({ p: [x, -0.3, z], s: [sz * 1.5, 0.03, sz], color: water.vary(rnd() > 0.45 ? mid : deep, 0.05), opacity: 0.9, sway: rough });
-  }
-  for (let i = 0; i < 560; i += 1) water.add({ p: [-38 + rnd() * 76, -0.26, SEA_Z + rnd() * 27], s: [0.35 + rnd() * 0.3, 0.02, 0.04], color: foam, opacity: 0.75, sway: rough });
+  // rows of dark wave dashes on a flat water sheet, laid out on a grid so the edges are crisp pixel art
+  const row = (u: number, v: number) => { const j = Math.floor(v * 56), k = (u * 160 + j * 3.7) % 9; return k < 2.4 ? deep : mid; };
+  panel(water, 'y', [0, -0.3, SEA_Z - 0.3 + 14], 80, 28, row, { density: 4, thick: 0.02 });
+  for (let i = 0; i < 260; i += 1) panel(water, 'y', [-38 + rnd() * 76, -0.26, SEA_Z + rnd() * 27], 0.5 + rnd() * 0.5, 0.12, foam, { density: 40, thick: 0.01, opacity: 0.95 });
+  void rough;
 }
 
 function pier(ctx: Ctx): void {

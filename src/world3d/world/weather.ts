@@ -10,10 +10,10 @@ function clouds(ctx: Ctx): void {
   const { sky } = ctx.L, t = ctx.tone;
   for (let i = 0; i < t.clouds; i += 1) {
     const [x, y, z] = CLOUD_SPOTS[i % CLOUD_SPOTS.length], big = t.rain ? 1.4 : 1;
-    sky.blob(x, y, z, 2.6 * big, 0.9, 1.6 * big, 90, (_a, h) => (h > 0.2 ? t.cloud : 0xc9d3e6), 0.5, { sway: 0.2, opacity: t.rain ? 0.92 : 0.85 });
+    sky.blob(x, y, z, 2.6 * big, 0.9, 1.6 * big, 90, (_a, h) => (h > 0.2 ? t.cloud : 0xc9d3e6), 0.5, { sway: 0.2, opacity: t.rain ? 0.92 : 0.85, fx: true });
   }
   if (t.sun) {
-    sky.blob(-6, t.sun.y, -17, 1.4, 1.4, 1.4, 160, t.sun.color, 0.3, { opacity: 0.95 });
+    sky.add({ p: [-6, t.sun.y, -17], s: [0.8, 0.8, 0.8], color: t.sun.color, opacity: 1, fx: true }); // one crisp disc
     sky.blob(-6, t.sun.y, -17, 2.4, 2.4, 2.4, 100, 0xffd85a, 0.4, { opacity: 0.25 });
   }
 }

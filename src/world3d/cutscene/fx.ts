@@ -25,7 +25,7 @@ export function streaks(b: Builder, a: Area, n: number, o: { color: number; len:
   const period = a.h * 2;
   for (let i = 0; i < n; i += 1) {
     const x = (b.rnd() * 2 - 1) * a.w, y = (b.rnd() * 2 - 1) * a.h, len = o.len * (0.7 + b.rnd() * 0.6);
-    for (const k of [-1, 0, 1]) b.add({ p: [x, y + k * period, 0], s: [o.thick ?? 0.03, len, 0.03], q: spin(o.lean ?? 0.12), color: b.vary(o.color, 0.05), opacity: o.opacity ?? 0.7 });
+    for (const k of [-1, 0, 1]) b.add({ p: [x, y + k * period, 0], s: [o.thick ?? 0.03, len, 0.03], q: spin(o.lean ?? 0.12), color: o.color, opacity: o.opacity ?? 0.7, fx: true });
   }
 }
 
@@ -36,29 +36,22 @@ export function flecks(b: Builder, a: Area, n: number, o: { colors: number[]; si
     const x = (b.rnd() * 2 - 1) * a.w, y = (b.rnd() * 2 - 1) * a.h, sz = o.size * (0.6 + b.rnd() * 0.8);
     const color = o.colors[Math.floor(b.rnd() * o.colors.length)], q = spin(b.rnd() * Math.PI);
     for (const k of o.tile === false ? [0] : [-1, 0, 1]) {
-      b.add({ p: [x, y + k * period, 0], s: [sz, sz * (o.flat ?? 1), sz * 0.2], q, color, opacity: o.opacity ?? 0.9, sway: o.sway ?? 0 });
+      b.add({ p: [x, y + k * period, 0], s: [sz, sz * (o.flat ?? 1), sz * 0.2], q, color, opacity: o.opacity ?? 0.9, sway: o.sway ?? 0, fx: true });
     }
   }
 }
 
-/** a flat glowing ball: sun, moon, lamps. Exact colour, no shading. */
+/** a flat glowing ball: sun, moon, lamps. One crisp disc, never outlined, with a banded glow behind it. */
 export function ball(b: Builder, x: number, y: number, r: number, color: number, o: { halo?: number; haloColor?: number; opacity?: number } = {}) {
-  const n = Math.ceil(r * 55) + 14;
-  for (let i = 0; i < n; i += 1) {
-    const a = b.rnd() * Math.PI * 2, d = Math.sqrt(b.rnd()) * r * 0.82;
-    b.add({ p: [x + Math.cos(a) * d, y + Math.sin(a) * d, 0], s: [r * 0.2, r * 0.2, r * 0.05], color, opacity: o.opacity ?? 1 });
-  }
+  b.add({ p: [x, y, 0], s: [r / 1.8, r / 1.8, 0.05], color, opacity: o.opacity ?? 1, fx: true });
   if (!o.halo) return;
-  for (let i = 0; i < 40; i += 1) {
-    const a = b.rnd() * Math.PI * 2, d = Math.sqrt(b.rnd()) * r * o.halo;
-    b.add({ p: [x + Math.cos(a) * d, y + Math.sin(a) * d, -0.05], s: [r * 0.5, r * 0.5, 0.05], color: o.haloColor ?? color, opacity: 0.11 });
-  }
+  for (const k of [0.45, 0.75, 1]) b.add({ p: [x, y, -0.05], s: [(r * (1.15 + (o.halo - 1.15) * k)) / 2.6, (r * (1.15 + (o.halo - 1.15) * k)) / 2.6, 0.05], color: o.haloColor ?? color, opacity: 0.3 });
 }
 
 export function cloud(b: Builder, x: number, y: number, scale: number, color: number) {
-  b.blob(x, y, 0, 2.6 * scale, 0.8 * scale, 0.7 * scale, 70, color, 0.5 * scale, { opacity: 0.95, jitter: 0.03 });
-  b.blob(x - 1.4 * scale, y - 0.2 * scale, 0.1, 1.5 * scale, 0.6 * scale, 0.6 * scale, 40, color, 0.42 * scale, { opacity: 0.95, jitter: 0.03 });
-  b.blob(x + 1.6 * scale, y - 0.15 * scale, 0.1, 1.4 * scale, 0.55 * scale, 0.6 * scale, 40, color, 0.4 * scale, { opacity: 0.95, jitter: 0.03 });
+  b.blob(x, y, 0, 2.6 * scale, 0.8 * scale, 0.7 * scale, 70, color, 0.5 * scale, { opacity: 0.95, fx: true });
+  b.blob(x - 1.4 * scale, y - 0.2 * scale, 0.1, 1.5 * scale, 0.6 * scale, 0.6 * scale, 40, color, 0.42 * scale, { opacity: 0.95, fx: true });
+  b.blob(x + 1.6 * scale, y - 0.15 * scale, 0.1, 1.4 * scale, 0.55 * scale, 0.6 * scale, 40, color, 0.4 * scale, { opacity: 0.95, fx: true });
 }
 
 /** a burst of sparks on a sphere shell, unit radius; scale the node to grow it */

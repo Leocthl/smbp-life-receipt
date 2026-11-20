@@ -24,10 +24,10 @@ export function lookFor(d: WorldDescriptor, seed: number): AvatarLook {
   const rich = d.lifestyle;
   const dark = (d.burntOut ? 0.62 : 1) * (d.bankrupt ? 0.8 : 1);
   const skin = [0xffc29b, 0xe8a77a, 0xa8744a][Math.abs(seed) % 3];
-  let top = 0xfff6dc, pants = 0x2b3a55, hair = 0x2b3a55;
-  if (young) { top = 0x8fd3ff; pants = 0x3d7fc4; }
-  else if (old) { top = 0xa8744a; pants = 0x9aa8c4; hair = 0xc9d3e6; }
-  else if (mid) { top = 0xcdeeff; hair = 0xc9d3e6; }
+  let top = 0x4cc3d9, pants = 0x2b3a55, hair = 0x2b3a55;
+  if (young) { top = 0xffd85a; pants = 0x3d7fc4; }
+  else if (old) { top = 0xd9a874; pants = 0x6b789c; hair = 0xc9d3e6; }
+  else if (mid) { top = 0xb9a7ff; hair = 0xc9d3e6; }
   else if (d.job === 'unemployed') top = 0x7ed07a;
   const blazer = rich > 0.65 ? 0x8a73e0 : rich > 0.35 && !young && !old ? 0x6b789c : null;
   const slouch = (d.burntOut ? 0.32 : 0) + (d.q.joy < 30 ? 0.12 : 0) + (old ? 0.1 : 0);

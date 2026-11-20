@@ -65,11 +65,11 @@ const bags: Draw = ({ b }, o) => {
 
 const guitar: Draw = ({ b }, o) => {
   const { x, y, z, s } = o;
-  b.blob(x, y + 0.24 * s, z, 0.2 * s, 0.22 * s, 0.06 * s, 50, 0xe8a77a, 0.06 * s);
-  b.blob(x, y + 0.42 * s, z, 0.14 * s, 0.14 * s, 0.06 * s, 30, 0xe8a77a, 0.05 * s);
-  b.add({ p: [x, y + 0.26 * s, z + 0.05 * s], s: [0.05 * s, 0.05 * s, 0.02], color: INK });
-  line(b, [x, y + 0.5 * s, z], [x, y + 1.05 * s, z], 0x6f4a32, 0.035 * s, 0.04);
-  b.blob(x, y + 1.1 * s, z, 0.05 * s, 0.07 * s, 0.03 * s, 8, o.acc, 0.03 * s);
+  b.blob(x, y + 0.2 * s, z, 0.22 * s, 0.2 * s, 0.07 * s, 60, 0xd9953a, 0.06 * s);
+  b.blob(x, y + 0.42 * s, z, 0.15 * s, 0.14 * s, 0.07 * s, 40, 0xd9953a, 0.05 * s);
+  b.add({ p: [x, y + 0.26 * s, z + 0.075 * s], s: [0.045 * s, 0.045 * s, 0.02], color: INK, opacity: 1, detail: true });
+  box(b, x, z, 0.07 * s, 0.05 * s, y + 0.5 * s, 0.6 * s, 0x6f4a32, { density: 300, edge: false });
+  box(b, x, z, 0.12 * s, 0.05 * s, y + 1.08 * s, 0.14 * s, o.acc, { density: 300, edge: false });
 };
 
 const frame = (inner: number, mark: number): Draw => ({ b, g }, o) => {
@@ -150,6 +150,6 @@ export function drawProp(f: Surf, tag: Tag | 'none', o: PropOpts, onWall: boolea
 }
 
 /** A grown-up for the family scenes: parents, partner, friend. */
-export function adult(b: Builder, x: number, z: number, top: number, hair: number, scale = 1.45): void {
+export function adult(b: Builder, x: number, z: number, top: number, hair: number, scale = 1.2): void {
   figure(b, x, z, { top, pants: 0x4a5578, hair, scale });
 }

@@ -96,7 +96,7 @@ export const buildWorld: BuildWorld = (d, seed) => {
       if (tram) {
         const tx = ((t * 1.7 + 20) % 44) - 22;
         tram.mesh.position.x = tx;
-        tram.uniforms.uOpacity.value = Math.max(0, Math.min(1, (15.5 - Math.abs(tx)) / 3)); // fades beyond the street's ends
+        tram.mesh.visible = Math.abs(tx) < 14.5; // leaves the picture past the street's ends (a fade would blend overlapping panels)
       }
       if (boats) boats.mesh.position.set(Math.sin(t * 0.2) * 0.7, Math.sin(t * 1.3) * 0.05, 0);
     },

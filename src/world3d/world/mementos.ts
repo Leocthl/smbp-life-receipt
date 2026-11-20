@@ -13,6 +13,8 @@ const PREFER: Record<string, SlotType[]> = {
   family: ['shelf', 'wall', 'desk'], career: ['desk', 'wall'], work: ['desk', 'wall'], debt: ['floor', 'desk'], insure: ['floor'],
   status: ['desk', 'shelf'], safe: ['floor'], sell: ['shelf', 'desk'], hold: ['shelf', 'desk'], none: ['floor', 'shelf'],
 };
+/** keepsakes are drawn bigger than life so each one reads as what it is */
+const PROP_BOOST = 1.2;
 const ANY: SlotType[] = ['floor', 'desk', 'shelf', 'wall'];
 
 function hash(s: string): number {
@@ -36,7 +38,7 @@ function takeSlot(groups: Slot[][], used: Set<Slot>, m: Memento): Slot | null {
 function opts(ctx: Ctx, m: Memento, scale: number, x: number, y: number, z: number) {
   const grow = Math.max(0, Math.min(1.6, (ctx.d.age - m.age) / 12));
   const fill = Math.max(0.25, Math.min(1, 0.3 + Math.abs(m.netWorthDelta) / 30000 + (ctx.d.age - m.age) / 30));
-  return { x, y, z, s: sizeOf(m) * scale, acc: ACCENT[m.category] ?? 0xffc29b, grow, fill };
+  return { x, y, z, s: Math.min(2.0, sizeOf(m) * scale * PROP_BOOST), acc: ACCENT[m.category] ?? 0xffc29b, grow, fill };
 }
 
 /** Draws one keepsake per decision; the newest goes on the fresh surface so the stage can grow just that prop. */

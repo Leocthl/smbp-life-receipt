@@ -1,10 +1,13 @@
 import * as THREE from 'three';
+import { INK, rampTexture } from './materials';
+import { CLEAN, FINAL, VERT } from './pixelShaders';
 
-// Pixel-art pass: the scene is drawn small (with multisampling, so splats melt together), then blown up with
-// nearest-neighbour sampling, ordered dithering and a limited palette. The camera is snapped to the pixel grid so
-// still scenery does not shimmer when the camera pans.
+// Pixel-art pass: the scene is drawn at art-pixel size (no multisampling, so every pixel is ONE splat's ramp colour and
+// carries its material code in alpha), cleaned of single-pixel specks, outlined where depth jumps, then blown up with
+// nearest-neighbour sampling. The camera is snapped to the pixel grid so still scenery does not shimmer when it pans.
+// There is no global palette snap and no per-surface dithering: the palette is the material ramps (materials.ts).
 
-/** Limited palette: bright daytime Hong Kong. Sky, harbour turquoise, fresh greens, coral and peach, sunny yellow, lilac; the darker slates are for storms and ink outlines. */
+/** Kept for callers that want the old swatch list: the bright daytime palette the ramps were built around. */
 export const PALETTE = [
   0x2b3a55, 0x4a5578, 0x1f2a44, 0x6b789c, 0x9aa8c4, 0xc9d3e6, 0xfff6dc, 0xffffff,
   0x8fd3ff, 0xcdeeff, 0x4cc3d9, 0x2a9fc0, 0x3d7fc4,
@@ -14,30 +17,6 @@ export const PALETTE = [
   0xb9a7ff, 0x8a73e0, 0xe4dcff,
   0xa8744a, 0x6f4a32, 0xff9ec4, 0xe8a77a,
 ];
-
-const FRAGMENT = `
-uniform sampler2D map; uniform vec2 lowSize; uniform vec3 palette[${PALETTE.length}]; uniform float dither; uniform float vignette; uniform float fade; uniform vec3 fadeColor;
-varying vec2 vUv;
-float bayer(vec2 p) {
-  // 4x4 ordered dither, in 0..1
-  int x = int(mod(p.x, 4.0)); int y = int(mod(p.y, 4.0)); int i = x + y * 4;
-  float m[16];
-  m[0]=0.;m[1]=8.;m[2]=2.;m[3]=10.;m[4]=12.;m[5]=4.;m[6]=14.;m[7]=6.;m[8]=3.;m[9]=11.;m[10]=1.;m[11]=9.;m[12]=15.;m[13]=7.;m[14]=13.;m[15]=5.;
-  for (int k = 0; k < 16; k++) if (k == i) return m[k] / 16.0;
-  return 0.0;
-}
-void main() {
-  vec2 cell = floor(vUv * lowSize);
-  // the target holds linear light; compare and dither in display (sRGB) space, where the palette was picked
-  vec3 c = pow(max(texture2D(map, (cell + 0.5) / lowSize).rgb, 0.0), vec3(1.0 / 2.2));
-  vec2 q = vUv - 0.5;
-  c *= 1.0 - dot(q, q) * vignette;
-  c += (bayer(cell) - 0.5) * dither;
-  vec3 best = palette[0]; float bestD = 1e9;
-  for (int k = 0; k < ${PALETTE.length}; k++) { vec3 d = c - palette[k]; float dd = dot(d * vec3(0.3, 0.59, 0.11), d); if (dd < bestD) { bestD = dd; best = palette[k]; } }
-  best = mix(best, fadeColor, fade);
-  gl_FragColor = vec4(best, 1.0);
-}`;
 
 export interface PixelRenderer {
   renderer: THREE.WebGLRenderer;
@@ -56,35 +35,51 @@ export function srgb(hex: number): THREE.Vector3 {
 }
 
 /** Art pixels across the screen's short side; ?px=N overrides it for tuning. */
-const ART_ROWS = Number(new URLSearchParams(window.location.search).get('px')) || 360;
+const ART_ROWS = Number(new URLSearchParams(window.location.search).get('px')) || 400;
 
 /** One art pixel in device pixels: about 1/ART_ROWS of the short side, at least 2. */
 function pixelSizeFor(w: number, h: number): number {
   return Math.max(2, Math.round(Math.min(w, h) / ART_ROWS));
 }
 
+function makeTarget(w: number, h: number, withDepth: boolean): THREE.WebGLRenderTarget {
+  const target = new THREE.WebGLRenderTarget(w, h, { samples: 0, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: true, type: THREE.UnsignedByteType });
+  if (withDepth) {
+    target.depthTexture = new THREE.DepthTexture(w, h);
+    target.depthTexture.minFilter = THREE.NearestFilter; target.depthTexture.magFilter = THREE.NearestFilter;
+  }
+  return target;
+}
+
+function pass(fragmentShader: string, uniforms: Record<string, THREE.IUniform>): { scene: THREE.Scene; material: THREE.ShaderMaterial; quad: THREE.Mesh } {
+  const material = new THREE.ShaderMaterial({ glslVersion: THREE.GLSL3, uniforms, vertexShader: VERT, fragmentShader, depthTest: false, depthWrite: false });
+  const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
+  quad.frustumCulled = false;
+  const scene = new THREE.Scene();
+  scene.add(quad);
+  return { scene, material, quad };
+}
+
 export function createPixelRenderer(container: HTMLElement): PixelRenderer {
-  const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance', preserveDrawingBuffer: true });
+  const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance', preserveDrawingBuffer: true, premultipliedAlpha: false });
   renderer.setPixelRatio(1);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.domElement.className = 'ml-world__canvas';
   container.appendChild(renderer.domElement);
   const low = new THREE.Vector2(4, 4);
-  const target = new THREE.WebGLRenderTarget(4, 4, { samples: 4, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter });
+  let target = makeTarget(4, 4, true), cleaned = makeTarget(4, 4, false);
+  const sky = new THREE.Vector3(...srgb(0x8fd3ff).toArray());
+  const shared = { lowSize: { value: low }, uSky: { value: sky } };
   const uniforms: Record<string, THREE.IUniform> = {
-    map: { value: target.texture }, lowSize: { value: low }, dither: { value: 0.03 }, vignette: { value: 0.15 },
-    palette: { value: PALETTE.map(srgb) }, fade: { value: 0 }, fadeColor: { value: srgb(0x2b3a55) },
+    ...shared, map: { value: cleaned.texture }, depthMap: { value: target.depthTexture }, ramps: { value: rampTexture() },
+    // kept for the stage: the fade to a colour, and the old vignette/dither knobs (the look no longer uses them)
+    dither: { value: 0 }, vignette: { value: 0 }, fade: { value: 0 }, fadeColor: { value: srgb(0x2b3a55) },
+    uSkyBands: { value: 1 }, uNear: { value: -200 }, uFar: { value: 400 }, uOrtho: { value: 1 }, uGap: { value: 0.9 }, uInk: { value: srgb(INK) },
   };
-  const material = new THREE.ShaderMaterial({
-    uniforms, fragmentShader: FRAGMENT,
-    vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
-    depthTest: false, depthWrite: false,
-  });
-  const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
-  quad.frustumCulled = false;
-  const flat = new THREE.Scene();
-  flat.add(quad);
+  const cleanPass = pass(CLEAN, { ...shared, map: { value: target.texture } });
+  const finalPass = pass(FINAL, uniforms);
   const flatCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const clear = new THREE.Color();
   const api: PixelRenderer = {
     renderer, pixel: 3, low, uniforms,
     resize() {
@@ -96,16 +91,36 @@ export function createPixelRenderer(container: HTMLElement): PixelRenderer {
       renderer.setSize(w, h, false);
       renderer.domElement.style.width = '100%';
       renderer.domElement.style.height = '100%';
-      target.setSize(low.x, low.y);
+      target.dispose(); cleaned.dispose();
+      target = makeTarget(low.x, low.y, true); cleaned = makeTarget(low.x, low.y, false);
+      uniforms.map.value = cleaned.texture; uniforms.depthMap.value = target.depthTexture;
+      cleanPass.material.uniforms.map.value = target.texture;
     },
     render(scene, camera) {
-      renderer.setRenderTarget(target);
-      renderer.render(scene, camera);
-      renderer.setRenderTarget(null);
-      renderer.render(flat, flatCam);
+      rampTexture();
+      const background = scene.background;
+      if (background instanceof THREE.Color) sky.copy(srgb(background.getHex()));
+      clear.setRGB(sky.x, sky.y, sky.z, THREE.LinearSRGBColorSpace); // raw display values: the target holds sRGB, not linear light
+      renderer.setClearColor(clear, 0);
+      scene.background = null;
+      const ortho = (camera as THREE.OrthographicCamera).isOrthographicCamera === true;
+      const cam = camera as THREE.OrthographicCamera;
+      uniforms.uNear.value = cam.near; uniforms.uFar.value = cam.far; uniforms.uOrtho.value = ortho ? 1 : 0;
+      try {
+        renderer.setRenderTarget(target);
+        renderer.clear();
+        renderer.render(scene, camera);
+        renderer.setRenderTarget(cleaned);
+        renderer.render(cleanPass.scene, flatCam);
+      } finally {
+        scene.background = background;
+        renderer.setRenderTarget(null);
+      }
+      renderer.render(finalPass.scene, flatCam);
     },
     dispose() {
-      target.dispose(); material.dispose(); quad.geometry.dispose(); renderer.dispose();
+      target.dispose(); cleaned.dispose(); cleanPass.material.dispose(); finalPass.material.dispose();
+      cleanPass.quad.geometry.dispose(); finalPass.quad.geometry.dispose(); renderer.dispose();
       renderer.domElement.remove();
     },
   };

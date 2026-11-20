@@ -47,9 +47,9 @@ export function flatPeople(ctx: Ctx, home: boolean): void {
     else adult(c, 5.4, 0.4, 0xb9a7ff, 0x6f4a32, 1.2);
     if (d.kids > 0) figure(c, 4.6, 1.7, { top: 0xffd85a, pants: 0x3d7fc4, hair: 0x2b3a55, scale: 0.8 });
   } else {
-    if (d.partner) adult(c, 0.5, 0.2, 0xff9ec4, 0x2b3a55);
-    if (d.kids > 0) figure(c, 1.4, 1.6, { top: 0xffd85a, pants: 0x3d7fc4, hair: 0x2b3a55, scale: 0.8 });
+    if (d.partner) adult(c, -0.5, -0.4, 0xff9ec4, 0x2b3a55);
+    if (d.kids > 0) figure(c, 1.6, 0.4, { top: 0xffd85a, pants: 0x3d7fc4, hair: 0x2b3a55, scale: 0.8 });
   }
   const friends = Math.round(ctx.bonds * 3);
-  [[0.2, 1.3], [1.5, 2.2], [-0.2, 2.4]].slice(0, friends).forEach(([x, z], i) => figure(c, x, z, { top: [0x4cc3d9, 0xff9ec4, 0xffd85a][i], pants: 0x4a5578, hair: 0x2b3a55, scale: 1.3 }));
+  [[0.6, -1.1], [-0.9, -1.5], [2.2, -0.4]].slice(0, friends).forEach(([x, z], i) => figure(c, x, z, { top: [0x4cc3d9, 0xff9ec4, 0xffd85a][i], pants: 0x4a5578, hair: 0x2b3a55, scale: 1.3 }));
 }
