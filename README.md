@@ -1,11 +1,39 @@
 # 人生收據 Life Receipt
 
-A finance life-sim set in Hong Kong. You play one life from 18 (first year of uni) to 65, one decision card at a
-time: tuition loans, 家用, first card, MPF fund, renting or buying, weddings, layoffs, scams, parents getting older.
-At 65 the game prints your "life receipt": a behaviour label (none is better than another), what you said you
-wanted compared with what you did, the moments that mattered with "what if" numbers, and the avoidable mistakes.
+> **SMBP FinHack — Finance Track Submission**
+>
+> - **Live Demo:** https://hklife.vercel.app
+> - **GitHub Repo:** https://github.com/Leocthl/smbp-life-receipt
+> - **Zero-Server Static SPA:** Pure client-side React + Vite + WebGL2 (`$0` backend cost, **0 PII stored**)
 
-Educational only, not financial advice.
+A Hong Kong finance life-sim played inside a living 3D pixel-art city. You live one seeded life from **age 18** (first year of university) to **age 65** across tuition loans, 家用 (family allowance), credit cards, MPF allocation, renting vs. buying a flat, weddings, layoffs, scams, and aging parents. At 65, the cha chaan teng printer outputs your **6-Axis Life Hexagon Thermal Receipt** and a **1080×1350 PNG Share Card**—comparing what you said you wanted against what you actually chose, with counterfactual "what if" numbers.
+
+Educational only, not financial advice. Bilingual **香港粵語 (default)** and **English** (`?lang=en`), mobile-first (`390×844` touch bottom sheet + virtual joystick) and desktop.
+
+---
+
+## Shipped Capabilities
+
+- **Age 18 → 65 HK Finance Life-Sim (`src/engine/`, `src/data/`):**
+  - 8 semester turns in university followed by yearly adult turns, driven by Hong Kong-calibrated figures (`src/data/hkFacts.ts`), MPF, salaries tax, credit-card & mortgage debt, insurance, and seeded market cycles (`bull` / `normal` / `correction` / `crash` / `recovery`).
+  - Deterministic seeded RNG streams (`src/engine/rng.ts`) ensure `?seed=123` replays the exact same character and market path without choice-order leakage.
+- **Custom WebGL2 Gaussian-Splat Pixel-Art 3D Hong Kong (`src/world3d/`):**
+  - Custom WebGL2 Gaussian-splat geometry (`gaussian.ts`) + two-pass pixel-art resolve shader (`pixelShaders.ts`) with 1px ink outlines, Bayer-dithered sky, distant **Victoria Peak / Lion Rock** mountain silhouette, and morning-to-golden-hour progression.
+  - **Progressive scope & camera pitch (`world/index.ts`):** Your world physically expands as you grow—from bedroom (`room`) → family flat (`home`) → street block (`block`) → district (`district`) → Victoria Harbour (`city`)—with full **360° orbit** and seamless toroidal wrapping outdoors.
+  - **Living HK streetscape:** Animated pedestrians (`livingNpc.ts`), Hong Kong red taxis, green minibus, double-decker tram, and Victoria Harbour Star Ferry (`traffic.ts`, `tram.ts`), overhanging pulsing neon signs, swaying market lanterns, cafe steam (`streetDetail.ts`), and ambient street chatter bubbles.
+- **Clickable Living City Hub Pins & Open-World Free Actions (`src/engine/cityHub.ts`, `freeChoice.ts`, `procedural.ts`, `src/world3d/cityPins.ts`):**
+  - Outdoor worlds surface state-aware floating **City Hub Pins** (`bank`, `office`, `cafe`, `home`, `market`, `park`, `clinic`, `campus`, `pier`) plus a live procedural random encounter pin each year.
+  - Clicking a pin walks your avatar there and opens free-roam actions with **customizable HK$ sliders / % pills** (invest in index funds or stocks, build savings, repay high-interest debt, work overtime, upskill, check-up, or trigger live procedural random events).
+- **6-Axis Life Hexagon Thermal Receipt & 1080×1350 Share Card (`src/engine/hexReport.ts`, `src/ui/screens/EndingScreen.tsx`, `src/ui/shareCard.ts`):**
+  - Evaluates 6 life dimensions (`wealth`, `safety`, `joy`, `bonds`, `freedom`, `growth`), assigns one of 12 Hex Archetypes (`S`/`A`/`B`/`C` grade, rarity %, complementary partner archetype, serial barcode), pairs it with your behaviour label, goal alignment, counterfactual moments, and avoidable mistakes, and exports a crisp **1080×1350 PNG Share Card**.
+- **108 BPM WebAudio Soundtrack & Procedural SFX (`src/ui/audio/`):**
+  - Zero-asset WebAudio lookahead scheduler (`ambient.ts`) playing a 108 BPM 8-bar city-pop Rhodes/kalimba groove alongside rate-limited procedural SFX (`sfx.ts` — thermal printer zip, marimba clicks, ka-ching chimes, footsteps, fanfares) with instant mute toggle.
+- **$0-Server Static SPA Architecture (0 PII Stored):**
+  - Runs 100% in the browser as static assets on Vercel (`https://hklife.vercel.app`)—no user accounts, no backend API, no database, no cookies/tracking, and zero personally identifiable information stored or transmitted.
+- **10,000-Life Monte Carlo Balance Testing (`BALANCE_REPORT.md`):**
+  - Automated Pareto dominance verification across 8 bot play styles × 10,000 seeded lives (`80,000` simulated lives total). Current result: **PASS — no dominant strategy** (`indexer` leads median net worth, `saver` leads bankruptcy avoidance, `spender` leads happiness & relationships, and all 8 ending labels are reachable).
+
+---
 
 ## Run it
 
@@ -15,7 +43,7 @@ npm run dev          # http://127.0.0.1:5198
 ```
 
 - `?seed=123` replays the same life (same character, same market); `?lang=en` starts in English (default 粵語).
-- Plays on phone first (390×844, touch) and on desktop.
+- Plays on phone first (`390×844`, touch) and on desktop.
 
 | Command | What it does |
 |---|---|
@@ -36,13 +64,15 @@ npm run dev          # http://127.0.0.1:5198
   - `turn.ts` income, MPF, salaries tax, costs, debts, market, delayed effects, happiness drift. 8 semester turns, then
     yearly turns.
   - `events.ts` card drawing, choices, outcomes, hidden traits (always revealed the first time they matter).
-  - `endings.ts` labels, goal comparison, moments and counterfactuals, mistakes.
+  - `cityHub.ts` + `freeChoice.ts` + `procedural.ts` state-aware floating hub pins, HK$ slider actions, and procedural encounters.
+  - `endings.ts` + `hexReport.ts` labels, 6-axis hex archetype & grade, goal comparison, moments and counterfactuals, mistakes.
   - `bots.ts` + `sim.ts` headless players used by tests and the balance report.
+- `src/world3d/`: custom WebGL2 Gaussian-splat + pixel-art 3D renderer (`gaussian.ts`, `pixel.ts`, `pixelShaders.ts`), floating city pins (`cityPins.ts`), and Hong Kong diorama builders (`world/`).
 - `src/data/`: every number lives here. `hkFacts.ts` has the Hong Kong figures with sources; anything not sourced is
   marked `ASSUMPTION` and listed in `PROGRESS.md`. `config.ts` holds game tuning; `endings.ts` holds the label weights.
 - `src/data/events/`: the event deck (`early.ts` 18-25, `mid.ts` 25-35, `later.ts` 35-65, `recurring.ts`).
 - `src/i18n/{zh,en}/`: all text. zh is Hong Kong Cantonese.
-- `src/ui/`: React screens. One visual idea, a thermal receipt on a cha chaan teng table; all classes start with `ml-`.
+- `src/ui/`: React screens, 108 BPM WebAudio synthesizer (`audio/`), and `1080×1350` PNG Share Card generator (`shareCard.ts`). All classes start with `ml-`.
 
 ## How to add an event
 
