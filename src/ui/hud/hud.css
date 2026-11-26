@@ -16,13 +16,14 @@
 .ml-hud__counter { display: flex; align-items: center; gap: 6px; min-width: min-content; padding: 3px 8px 3px 6px; min-height: 36px; }
 .ml-hud__counter--neg .ml-hud__num { color: var(--ml-stamp); }
 .ml-hud__stack { display: flex; flex-direction: column; min-width: 0; gap: 3px; }
-.ml-hud__label { font-size: 10px; line-height: 1; font-weight: 800; letter-spacing: 0; color: var(--ml-muted); white-space: nowrap; }
+.ml-hud__label { font-size: 12px; line-height: 1; font-weight: 800; letter-spacing: 0; color: var(--ml-muted); white-space: nowrap; }
 .ml-hud__num { font: 800 15px/1 var(--ml-num); font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--ml-text); }
 .ml-hud__num--up { animation: ml-tick-up 280ms steps(4, end); }
 .ml-hud__num--down { animation: ml-tick-down 280ms steps(4, end); }
 @keyframes ml-tick-up { from { color: var(--ml-up); transform: translateY(-3px); } to { transform: none; } }
 @keyframes ml-tick-down { from { color: var(--ml-stamp); transform: translateY(3px); } to { transform: none; } }
 
+.ml-hud__counter, .ml-hud__meter { position: relative; }
 .ml-hud__chip { display: inline-flex; align-items: center; gap: 5px; min-height: 28px; padding: 2px 7px; font: 800 12px/1 var(--ml-num); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ml-hud__age { background: var(--ml-sun); font-family: var(--ml-font); font-size: 13px; }
 .ml-hud__meter .ml-hud__num { font-size: 13px; }
@@ -31,12 +32,58 @@
 .ml-hud__pips span.is-on { background: var(--ml-ink); }
 .ml-hud__meter .ml-hud__pips span.is-on { background: var(--ml-coral); }
 .ml-hud__meter[data-testid="stat-relationships"] .ml-hud__pips span.is-on { background: var(--ml-turquoise); }
-.ml-hud__weather { padding: 2px 5px; background: var(--ml-sky); }
+.ml-hud__weather { display: inline-flex; padding: 2px 3px; background: var(--ml-sky); box-shadow: var(--ml-frame2); margin: 0 2px 0 3px; }
 .ml-hud__runway--low { color: var(--ml-stamp); }
+
+/* juice: a pulse on the chip that changed, a floating delta, the age pop, a worried shake when cash goes below zero */
+.ml-hud__pulse--up { animation: ml-pulse-up 520ms var(--ml-ease); }
+.ml-hud__pulse--down { animation: ml-pulse-down 520ms var(--ml-ease); }
+@keyframes ml-pulse-up { 0% { transform: scale(1); } 30% { transform: scale(1.07); background: #e3f6dc; } 100% { transform: scale(1); } }
+@keyframes ml-pulse-down { 0% { transform: scale(1); } 30% { transform: scale(0.95); background: #ffe3da; } 100% { transform: scale(1); } }
+.ml-hud__age--pop { animation: ml-age-pop 600ms cubic-bezier(0.3, 1.6, 0.5, 1); }
+@keyframes ml-age-pop { 0% { transform: scale(1); } 35% { transform: scale(1.22) rotate(-3deg); } 100% { transform: scale(1); } }
+.ml-hud__counter--shake { animation: ml-worry-shake 480ms linear; }
+@keyframes ml-worry-shake { 0%, 100% { transform: translateX(0); } 15% { transform: translateX(-4px); } 35% { transform: translateX(4px); } 55% { transform: translateX(-3px); } 75% { transform: translateX(2px); } }
+.ml-hud__delta {
+  position: absolute; z-index: 2; right: 4px; top: calc(100% - 3px); padding: 1px 6px 2px; pointer-events: none; white-space: nowrap;
+  font: 800 12px/1.2 var(--ml-num); background: var(--ml-cream); box-shadow: var(--ml-frame2); animation: ml-delta-float 1400ms var(--ml-ease) both;
+}
+.ml-hud__delta--up { color: var(--ml-up); }
+.ml-hud__delta--down { color: var(--ml-stamp); }
+@keyframes ml-delta-float { 0% { opacity: 0; transform: translateY(-6px); } 15% { opacity: 1; transform: translateY(0); } 75% { opacity: 1; transform: translateY(6px); } 100% { opacity: 0; transform: translateY(12px); } }
+@media (prefers-reduced-motion: reduce) {
+  .ml-hud__pulse--up, .ml-hud__pulse--down, .ml-hud__age--pop, .ml-hud__counter--shake { animation: none; }
+  .ml-hud__delta { animation: ml-delta-fade 1400ms linear both; }
+  @keyframes ml-delta-fade { 0%, 80% { opacity: 1; } 100% { opacity: 0; } }
+}
+
+/* sound and help, at the end of the second row */
+.ml-hud__tools { display: flex; gap: 6px; margin-left: auto; flex: none; }
+.ml-hud__tool { display: inline-flex; align-items: center; justify-content: center; padding: 0 0 4px; }
+.ml-hud--bare .ml-hud__tool { margin-right: 6px; }
+.ml-hud--away { display: none; }
+.ml-hud--spot { z-index: 52; }
+@media (max-width: 899px) {
+  /* phone: 44px tall tap targets a little narrow so the second row still fits at 360px; the bar is 96px tall, the sheet leaves 92px+ */
+  .ml-hud { top: calc(4px + env(safe-area-inset-top)); }
+  .ml-hud__main { gap: 4px; }
+  .ml-hud .ml-lang.ml-hud__tool { width: 44px; min-width: 44px; padding: 0 0 4px; }
+}
+@media (max-width: 440px) {
+  /* the ten-block meters become a thin bar so the second row has room for sound and help */
+  .ml-hud__row--meta { gap: 3px; }
+  .ml-hud__tools { gap: 4px; }
+  .ml-hud__pips { width: 100%; gap: 0; }
+  .ml-hud__pips span { flex: 1 1 0; width: auto; height: 3px; }
+  .ml-hud__chip { padding: 2px 5px; }
+}
+
+@media (max-width: 380px) { .ml-hud__row--meta { gap: 2px; } .ml-hud__tools { gap: 2px; } .ml-hud__meter, .ml-hud__age { padding-inline: 3px; } }
 
 /* small phones (360px): the same HUD, a little tighter, so no label or number is ever clipped */
 @media (max-width: 420px) {
   .ml-hud { left: 6px; right: 6px; gap: 6px; }
+  .ml-hud .ml-hud__main { gap: 4px; }
   .ml-hud--nolang { right: 6px; }
   .ml-hud__main, .ml-hud__row { gap: 6px; }
   .ml-hud__row .ml-hud__counter { flex: 1 1 auto; max-width: none; }

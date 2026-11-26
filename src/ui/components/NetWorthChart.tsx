@@ -18,13 +18,13 @@ export function NetWorthChart({ history }: { history: TurnRecord[] }) {
   return (
     <figure className="ml-chart">
       <figcaption className="ml-summary__sub">{t('ending.chart')}</figcaption>
-      <svg viewBox={`0 0 ${W} ${H + 16}`} role="img" aria-label={`${t('ending.chart')}: ${money(vals.at(-1) ?? 0, lang, true)}`} shapeRendering="crispEdges">
+      <svg viewBox={`0 0 ${W} ${H + 20}`} role="img" aria-label={`${t('ending.chart')}: ${money(vals.at(-1) ?? 0, lang, true)}`} shapeRendering="crispEdges">
         <rect x={pad} y={pad} width={W - 2 * pad} height={H - 2 * pad} fill="var(--ml-sky-soft)" />
         <line x1={pad} x2={W - pad} y1={y(0)} y2={y(0)} stroke="var(--ml-line)" strokeWidth="2" strokeDasharray="4 4" />
         <polyline points={pts} fill="none" stroke="var(--ml-ink)" strokeWidth="6" strokeLinejoin="miter" />
         <polyline points={pts} fill="none" stroke="var(--ml-turquoise)" strokeWidth="3" strokeLinejoin="miter" />
-        {[18, 30, 45, 65].map((a) => <text key={a} x={x(a)} y={H + 13} fontSize="10" textAnchor="middle" fill="var(--ml-muted)">{a}</text>)}
-        <text x={W - pad} y={16} fontSize="10" textAnchor="end" fill="var(--ml-muted)">{money(max, lang, true)}</text>
+        {[18, 30, 45, 65].map((a) => <text key={a} x={x(a)} y={H + 16} fontSize="12" textAnchor="middle" fill="var(--ml-muted)">{a}</text>)}
+        <text x={W - pad} y={18} fontSize="12" textAnchor="end" fill="var(--ml-muted)">{money(max, lang, true)}</text>
       </svg>
     </figure>
   );

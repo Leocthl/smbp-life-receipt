@@ -24,6 +24,7 @@
   --ml-font: "PingFang HK", "Noto Sans HK", "Microsoft JhengHei", system-ui, sans-serif;
   --ml-num: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --ml-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ml-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   /* notched pixel borders: four shifted rectangles leave the corner pixel empty */
   --ml-frame: 0 -3px 0 0 var(--ml-ink), 0 3px 0 0 var(--ml-ink), -3px 0 0 0 var(--ml-ink), 3px 0 0 0 var(--ml-ink);
   --ml-frame2: 0 -2px 0 0 var(--ml-ink), 0 2px 0 0 var(--ml-ink), -2px 0 0 0 var(--ml-ink), 2px 0 0 0 var(--ml-ink);
@@ -54,10 +55,15 @@ button { font: inherit; color: inherit; }
   --ml-bs: var(--ml-frame), inset 0 -4px 0 0 var(--ml-ledge);
   appearance: none; border: 0; border-radius: 0; cursor: pointer; color: var(--ml-text);
   background: var(--ml-face); box-shadow: var(--ml-bs), var(--ml-ring, 0 0 0 0 transparent);
-  transition: transform 90ms var(--ml-ease), background-color 120ms var(--ml-ease);
+  transition: transform 140ms var(--ml-ease), background-color 140ms var(--ml-ease), filter 140ms var(--ml-ease);
 }
+/* hover only where a pointer can hover; a touch screen never gets a stuck hover */
+@media (hover: hover) and (pointer: fine) {
+  .ml-btn:hover:not(:disabled), .ml-choice:hover, .ml-lang:hover { filter: brightness(1.05); }
+}
+/* press: the ledge squashes and the whole button dips a little under the finger */
 .ml-btn:active:not(:disabled), .ml-choice:active, .ml-lang:active {
-  transform: translateY(3px);
+  transform: translateY(2px) scale(0.97);
   --ml-bs: var(--ml-frame), inset 0 -1px 0 0 var(--ml-ledge);
 }
 .ml-btn:focus-visible, .ml-choice:focus-visible, .ml-lang:focus-visible { outline: none; box-shadow: var(--ml-bs), var(--ml-halo); }

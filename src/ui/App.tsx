@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Lang } from '../i18n';
 import type { StageApi } from '../world3d/contracts';
 import { resolveWithMini } from './director/choice';
@@ -6,6 +6,15 @@ import { useCutscenes } from './director/useCutscenes';
 import { isFasting, useFast } from './director/useFast';
 import { useWalk } from './director/useWalk';
 import { HexButton } from './HexPanel';
+import { installAudio } from './audio';
+import { haptic } from './juice/motion';
+import { exitGhost } from './juice/slipExit';
+import { Toasts } from './juice/Toasts';
+import { useJuice } from './juice/useJuice';
+import { usePrinterChatter, useWalkSounds } from './juice/useLiveFx';
+import { HelpDialog } from './onboarding/HelpDialog';
+import { HUD_STEP, Onboarding } from './onboarding/Onboarding';
+import { useOnboarding } from './onboarding/useOnboarding';
 import { Hud } from './hud/Hud';
 import { I18nProvider, makeI18n } from './i18nContext';
 import { MiniGame } from './minigames/MiniGame';
@@ -56,6 +65,13 @@ export function App() {
   const fasting = isFasting(session);
   useFast(session, setSession);
   const walk = useWalk(stage, session, is3d && !fasting);
+  const walkSkipped = useRef(false);
+  const skipWalk = () => { walkSkipped.current = true; walk.skip(); };
+  useWalkSounds(stage, walk.spot, walkSkipped);
+  useEffect(() => installAudio(), []);
+  usePrinterChatter(!fasting);
+  const juice = useJuice(session, fasting);
+  const onb = useOnboarding();
   const cutting = useCutscenes(stage, session, lang, cutsOn && !fasting);
   // the player walks only while a decision is waiting for them at a place; a card, a receipt or a film freezes the avatar
   useEffect(() => { stage?.setControls(walk.spot !== null); }, [stage, walk.spot, cutting]);
@@ -71,10 +87,17 @@ export function App() {
   }, [lang, i18n]);
 
   const screen = session?.screen ?? { kind: 'start' as const };
+  // Slip's intro appears over the very first card of the first life (never under ?fast, never for test robots)
+  useEffect(() => { if (screen.kind === 'card' && !fasting) onb.offer(); }, [screen.kind, fasting, onb.offer]);
   // key changes per screen so each new slip "prints" in
   const slipKey = session ? `${session.state.turn}-${session.index}-${screen.kind}` : 'start';
   const away = walk.spot !== null || cutting; // the slip steps aside for the walk or the film
   const stageRef = useRef<HTMLElement>(null);
+  // when the slip changes, its cleanup runs after React has removed the old element but before anything else touches it: copy it for the exit fade
+  useLayoutEffect(() => {
+    const el = stageRef.current;
+    return () => { if (el && !el.isConnected) exitGhost(el); };
+  }, [slipKey]);
   const sheet = useSheet(stageRef, screen.kind !== 'start' && !away, slipKey, walk.spot !== null); // phone: the slip is a bottom sheet you can drag
   useEffect(() => {
     // each slip starts at the top; keyboard and screen-reader focus moves to it unless a button grabbed it
@@ -85,6 +108,7 @@ export function App() {
   const toggleLang = () => setLang(lang === 'zh' ? 'en' : 'zh');
   const onChoose = (id: string) => {
     if (!session) return;
+    haptic(10);
     const { next, mini: game } = resolveWithMini(session, id, minisOn && !fasting);
     if (game) setMini({ id: game, next });
     else setSession(next);
@@ -99,8 +123,9 @@ export function App() {
   return (
     <I18nProvider value={i18n}>
       {is3d && <WorldBackdrop state={session?.state ?? null} lang={lang} onStage={setStage} />}
-      {!cutting && <Hud state={playing?.state} hexSlot={playing && <HexButton session={playing} />} onLang={toggleLang} />}
-      {walk.spot && <WalkPrompt spot={walk.spot} onSkip={walk.skip} />}
+      <Hud state={playing?.state} hexSlot={playing && <HexButton session={playing} />} onLang={toggleLang} onHelp={onb.openHelp} away={cutting} spotlight={onb.panel === 'intro' && onb.step === HUD_STEP} />
+      {walk.spot && <WalkPrompt spot={walk.spot} onSkip={skipWalk} />}
+      <Toasts toasts={juice.toasts} onDone={juice.dismiss} />
       <div className="ml-app">
         <main
           className="ml-stage" key={slipKey} data-slip={slipKey} ref={stageRef} tabIndex={-1} hidden={away}
@@ -120,6 +145,8 @@ export function App() {
           </SheetFitContext.Provider>
         </main>
       </div>
+      {onb.panel === 'intro' && <Onboarding step={onb.step} onStep={onb.setStep} onDone={onb.finish} />}
+      {onb.panel === 'help' && <HelpDialog onClose={onb.closeHelp} onReplay={onb.replay} />}
       {mini && <MiniGame id={mini.id} seed={mini.next.state.seed + mini.next.state.turn} onDone={(r) => endMini(r.score)} onSkip={() => endMini(null)} />}
     </I18nProvider>
   );

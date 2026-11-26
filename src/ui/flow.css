@@ -1,45 +1,63 @@
 /* App-shell pieces: the walk prompt, the hexagon button and panel, the no-WebGL notice. All classes are ml-flow-*. */
 .ml-flow-notice {
   position: fixed; z-index: 4; top: calc(104px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); max-width: min(92vw, 420px); margin: 0;
-  padding: 6px 12px; background: var(--ml-cream); color: var(--ml-muted); box-shadow: var(--ml-frame2); font-size: 13px; line-height: 1.4; text-align: center;
+  padding: 6px 12px; background: var(--ml-cream); color: var(--ml-muted); box-shadow: var(--ml-frame2); font-size: 14px; line-height: 1.4; text-align: center;
 }
 
-/* walk prompt: a small cream plate above the joystick on a phone, bottom left on a desktop; the world stays in view */
+/* walk prompt: a cream plate above the joystick on a phone, bottom left on a desktop; the world stays in view */
 .ml-flow-walk {
   position: fixed; z-index: 5; left: 14px; right: 14px; bottom: calc(160px + env(safe-area-inset-bottom)); max-width: 420px; margin: 0 auto;
-  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 12px; row-gap: 4px; padding: 10px 12px; background: var(--ml-cream); color: var(--ml-text); box-shadow: var(--ml-frame), 4px 5px 0 3px var(--ml-shadow);
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 12px; row-gap: 2px; padding: 12px 12px 14px; background: var(--ml-cream); color: var(--ml-text); box-shadow: var(--ml-frame), 4px 5px 0 3px var(--ml-shadow);
   animation: ml-flow-in 200ms var(--ml-ease) both;
 }
-.ml-flow-walk__text { grid-column: 1; margin: 0; font-size: 17px; font-weight: 800; line-height: 1.3; }
-.ml-flow-walk__hint { grid-column: 1; margin: 0; font-size: 12px; line-height: 1.35; color: var(--ml-muted); }
-.ml-btn.ml-flow-walk__skip { grid-column: 2; grid-row: 1 / span 2; width: auto; min-height: 44px; margin: 0; padding: 6px 14px 10px; font-size: 15px; justify-self: end; }
+.ml-flow-walk__pin { grid-column: 1; grid-row: 1 / span 2; display: grid; place-items: center; width: 48px; height: 48px; background: var(--ml-sun); box-shadow: var(--ml-frame2); }
+.ml-flow-walk__pin .ml-pix { animation: ml-flow-bob 900ms ease-in-out infinite alternate; }
+.ml-flow-walk__text { grid-column: 2; margin: 0; font-size: 18px; font-weight: 800; line-height: 1.3; }
+.ml-flow-walk__hint { grid-column: 2; margin: 0; font-size: 14px; line-height: 1.4; color: var(--ml-muted); }
+.ml-btn.ml-flow-walk__skip { grid-column: 3; grid-row: 1 / span 2; width: auto; min-height: 44px; margin: 0; padding: 6px 12px 10px; font-size: 15px; justify-self: end; }
 @keyframes ml-flow-in { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes ml-flow-bob { from { transform: translateY(-2px); } to { transform: translateY(2px); } }
 @media (min-width: 900px) {
-  .ml-flow-walk { left: 22px; right: auto; bottom: 24px; width: 420px; margin: 0; }
+  .ml-flow-walk { left: 22px; right: auto; bottom: 24px; width: 460px; max-width: none; margin: 0; }
+  .ml-flow-walk__text { font-size: 20px; }
+  .ml-flow-walk__hint { font-size: 15px; }
 }
 @media (pointer: fine) and (max-width: 899px) { .ml-flow-walk { bottom: calc(28px + env(safe-area-inset-bottom)); } }
 
 /* hexagon button in the HUD */
 .ml-flow-hexbtn {
-  appearance: none; display: block; margin: 0; padding: 0; width: 56px; height: 56px; border: 0; background: transparent; cursor: pointer; border-radius: 0;
+  appearance: none; display: block; flex: none; margin: 0; padding: 0; width: 56px; height: 56px; border: 0; background: transparent; cursor: pointer; border-radius: 0;
+  transition: transform 140ms var(--ml-ease);
 }
-.ml-flow-hexbtn:active { transform: translateY(2px); }
-.ml-flow-hexbtn { flex: none; }
+.ml-flow-hexbtn:active { transform: scale(0.97); }
 .ml-flow-hexbtn:focus-visible { outline: none; box-shadow: var(--ml-halo); }
 
-/* the hexagon panel: a cream pixel frame over a dimmed world */
+/* the hexagon panel: a cream pixel frame over a dimmed world; it scales in (200ms) and leaves faster (120ms) */
 .ml-flow-hexdim {
   position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 16px;
-  background: rgba(31, 42, 68, 0.45); animation: ml-flow-fade 160ms ease-out both;
+  background: rgba(31, 42, 68, 0.5); animation: ml-flow-fade 160ms var(--ml-ease) both;
 }
+.ml-flow-hexdim.is-closing { opacity: 0; transition: opacity 120ms var(--ml-ease); }
 .ml-flow-hexpanel {
-  display: flex; flex-direction: column; width: min(100%, 440px); max-height: min(100%, 760px); background: var(--ml-cream); color: var(--ml-text);
-  box-shadow: var(--ml-frame), 5px 6px 0 3px var(--ml-shadow); animation: ml-flow-in 220ms var(--ml-ease) both;
+  display: flex; flex-direction: column; width: min(100%, 460px); max-height: min(100%, 780px); background: var(--ml-cream); color: var(--ml-text);
+  box-shadow: var(--ml-frame), 5px 6px 0 3px var(--ml-shadow); animation: ml-flow-pop 200ms var(--ml-ease) both;
 }
+.ml-flow-hexdim.is-closing .ml-flow-hexpanel { transform: scale(0.97); transition: transform 120ms var(--ml-ease); }
 .ml-flow-hexpanel__head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px 8px; }
-.ml-flow-hexpanel__title { margin: 0; font-size: 18px; }
-.ml-btn.ml-flow-hexpanel__close { width: auto; min-height: 44px; margin: 0; padding: 6px 16px 10px; font-size: 15px; }
-.ml-flow-hexpanel__body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 4px 14px calc(14px + env(safe-area-inset-bottom)); display: grid; gap: 14px; justify-items: center; }
-.ml-flow-hexpanel__body > .ml-hex-trail { width: 100%; max-height: none; }
+.ml-flow-hexpanel__title { margin: 0; font-size: 20px; }
+.ml-btn.ml-flow-hexpanel__close { width: auto; min-width: 72px; min-height: 48px; margin: 0; padding: 6px 18px 10px; font-size: 16px; }
+.ml-flow-hexpanel__body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 4px 14px calc(16px + env(safe-area-inset-bottom)); display: grid; gap: 18px; align-content: start; justify-items: center; }
+.ml-flow-hexpanel__shape { display: grid; gap: 10px; justify-items: center; width: 100%; }
+.ml-flow-hexpanel__trail { width: 100%; min-height: 0; }
+.ml-flow-hexpanel__sub { margin: 0 0 8px; font-size: 14px; font-weight: 800; color: var(--ml-muted); letter-spacing: 0.04em; }
+.ml-flow-hexpanel__body .ml-hex-trail { width: 100%; max-height: none; }
+@media (min-width: 900px) {
+  .ml-flow-hexpanel { width: min(100%, 900px); max-height: min(100%, 720px); }
+  .ml-flow-hexpanel__body { grid-template-columns: minmax(380px, 1.05fr) minmax(300px, 1fr); align-items: start; overflow: hidden; gap: 24px; }
+  .ml-flow-hexpanel__shape { align-self: center; }
+  .ml-flow-hexpanel__trail { display: flex; flex-direction: column; max-height: 100%; }
+  .ml-flow-hexpanel__trail .ml-hex-trail { flex: 1 1 auto; min-height: 0; max-height: 52vh; }
+}
 @keyframes ml-flow-fade { from { opacity: 0; } to { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .ml-flow-walk, .ml-flow-hexdim, .ml-flow-hexpanel { animation: none; } }
+@keyframes ml-flow-pop { from { transform: scale(0.96); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .ml-flow-walk, .ml-flow-walk__pin .ml-pix, .ml-flow-hexdim, .ml-flow-hexpanel { animation: none; } }

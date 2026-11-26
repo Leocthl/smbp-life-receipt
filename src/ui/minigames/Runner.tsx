@@ -18,7 +18,10 @@ export interface RunnerProps<S> {
   auto: boolean;
   reduced: boolean;
   onFinish(r: MiniGameResult): void;
+  /** the end card, drawn over the finished board */
   children?: ReactNode;
+  /** the intro card: sits beside or under the board, never over the play area */
+  dock?: ReactNode;
 }
 
 function useKeys(send: (patch: Partial<Input>) => void): void {
@@ -47,7 +50,7 @@ function useKeys(send: (patch: Partial<Input>) => void): void {
 }
 
 export function Runner<S>(props: RunnerProps<S>) {
-  const { def, seed, lang, running, children } = props;
+  const { def, seed, lang, running, children, dock } = props;
   const [init] = useState(() => def.init(seed));
   const stateRef = useRef<S>(init);
   const inputRef = useRef<Input>(NO_INPUT);
@@ -129,6 +132,7 @@ export function Runner<S>(props: RunnerProps<S>) {
         />
         {children}
       </div>
+      {dock}
       {running && <def.Overlay s={hud} lang={lang} send={send} />}
     </>
   );

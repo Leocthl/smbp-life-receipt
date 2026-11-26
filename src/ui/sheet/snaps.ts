@@ -8,7 +8,7 @@ export const PEEK_PX = 120;
 export const HALF_RATIO = 0.55;
 export const FULL_RATIO = 0.9;
 /** The HUD's two rows stay clear above a full sheet. Mirrored by sheet.css. */
-export const HUD_CLEAR_PX = 92;
+export const HUD_CLEAR_PX = 100;
 /** The grab bar above the panel; the sheet's content needs this much on top of its own height. */
 export const BAR_PX = 44;
 /** The walk prompt and the joystick under it cover this much of the bottom on a phone, so the avatar is framed above them. */

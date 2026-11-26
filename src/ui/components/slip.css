@@ -73,8 +73,22 @@
 }
 .ml-price::before { content: ""; position: absolute; left: 5px; top: 50%; width: 4px; height: 4px; margin-top: -2px; background: var(--ml-ink); }
 
-/* the main action stays in reach at the bottom of a scrolling sheet */
-.ml-receipt__body > .ml-btn--primary { position: sticky; z-index: 3; bottom: calc(10px + env(safe-area-inset-bottom)); --ml-ring: 0 8px 0 10px var(--ml-paper); }
+.ml-receipt__inner { display: flow-root; }
+.ml-empty { margin: 2px 3px 6px; padding: 6px 0; font-size: 15px; line-height: 1.5; color: var(--ml-muted); }
+
+/* the main action is pinned under the scrolling body, never over its content; a fade above it says there is more to read */
+.ml-receipt--foot .ml-receipt__body { box-shadow: -3px 0 0 0 var(--ml-ink), 3px 0 0 0 var(--ml-ink), 7px 4px 0 0 var(--ml-shadow); }
+.ml-receipt__foot {
+  position: relative; z-index: 2; flex: none; padding: 10px 16px 12px; background: var(--ml-paper);
+  box-shadow: -3px 0 0 0 var(--ml-ink), 3px 0 0 0 var(--ml-ink), 0 3px 0 0 var(--ml-ink), 7px 7px 0 0 var(--ml-shadow);
+}
+.ml-receipt__foot::before {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: 28px; pointer-events: none; opacity: 0;
+  background: linear-gradient(transparent, var(--ml-paper)); transition: opacity 160ms var(--ml-ease);
+}
+.ml-receipt__foot::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: repeating-linear-gradient(90deg, var(--ml-ink) 0 6px, transparent 6px 10px); }
+.ml-receipt[data-more] .ml-receipt__foot::before { opacity: 1; }
+.ml-receipt .ml-receipt__foot .ml-btn { margin: 3px 0; }
 
 /* lines with pixel leader dots */
 .ml-line { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 16px; }

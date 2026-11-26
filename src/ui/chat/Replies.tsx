@@ -7,7 +7,8 @@ import { money } from '../format';
 import { useChatT } from './useChatT';
 
 const RANK: Record<Literacy, number> = { low: 0, medium: 1, high: 2 };
-const STAGGER_MS = 50;
+/** the choices settle in one after another, quickly and unevenly (30-60ms apart, 240ms for the whole list); every button is tappable from the first frame */
+const STAGGER_MS = [0, 30, 70, 120, 180, 240];
 
 interface RepliesProps {
   state: GameState;
@@ -40,7 +41,7 @@ export const Replies = forwardRef<HTMLDivElement, RepliesProps>(function Replies
             className={`ml-chat-choice${on ? ' ml-chat-choice--on' : ''}`}
             data-tag={tag}
             data-testid={`choice-${c.id}`}
-            style={{ animationDelay: `${i * STAGGER_MS}ms` }}
+            style={{ animationDelay: `${STAGGER_MS[Math.min(i, STAGGER_MS.length - 1)]}ms` }}
             onClick={() => onSelect(c.id)}
           >
             <span className="ml-chat-choice__glyph" aria-hidden="true"><PixelIcon sprite={GLYPHS[tag]} scale={3} /></span>

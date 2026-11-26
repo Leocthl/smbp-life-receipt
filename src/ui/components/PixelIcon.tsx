@@ -19,6 +19,17 @@ function build(sprite: Sprite): Built {
   return { w: sprite.rows[0]?.length ?? 0, h: sprite.rows.length, paths: [...byColour.entries()] };
 }
 
+/** A sprite drawn inside someone else's SVG (a chart label): same paths as PixelIcon, placed at (x, y) at `scale` units per pixel. */
+export function PixelGroup({ sprite, x, y, scale }: { sprite: Sprite; x: number; y: number; scale: number }) {
+  const built = cache.get(sprite) ?? build(sprite);
+  cache.set(sprite, built);
+  return (
+    <g transform={`translate(${x} ${y}) scale(${scale})`} shapeRendering="crispEdges" aria-hidden="true">
+      {built.paths.map(([fill, d]) => <path key={fill} d={d} fill={fill} />)}
+    </g>
+  );
+}
+
 /** Draws a sprite crisp at `scale` CSS pixels per sprite pixel. Decorative unless `label` is given. */
 export function PixelIcon({ sprite, scale = 3, label, className }: { sprite: Sprite; scale?: number; label?: string; className?: string }) {
   const built = cache.get(sprite) ?? build(sprite);

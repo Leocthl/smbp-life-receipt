@@ -39,7 +39,7 @@ export function DecisionTrail({ entries, defaultOpen = null }: { entries: readon
             <QualityDelta delta={qualityDelta(e.before, e.after)} />
             {open && (
               <div className="ml-hex-trail__detail">
-                <HexRadar values={e.after} previous={e.before} size={220} />
+                <HexRadar values={e.after} previous={e.before} size={320} max={340} />
               </div>
             )}
           </li>

@@ -1,173 +1,114 @@
-/* Mini-game overlay. Bright daytime sky, cream panels, ink text. Every class is prefixed ml-mini. */
+/* Mini-game overlay. Bright daytime sky, cream pixel plates, ink text. Every class is prefixed ml-mini.
+   Phone: title bar, the board as tall as the screen allows, the game's own controls (or the intro card) under it.
+   Desktop: the board on the left at full height, title / goal / score / controls / Skip in a side panel. */
 .ml-mini {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 16px);
-  box-sizing: border-box;
-  background: linear-gradient(#8fd3ff, #cdeeff);
-  color: #1f2a44;
-  font-family: inherit;
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-  overflow: hidden;
+  --dock: 170px; /* what a game's own controls (or its intro card) need under the board on a phone */
+  --chrome: calc(104px + env(safe-area-inset-top) + env(safe-area-inset-bottom));
+  position: fixed; inset: 0; z-index: 60; box-sizing: border-box;
+  display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; align-content: center; row-gap: 10px;
+  padding: calc(env(safe-area-inset-top) + 10px) 14px calc(env(safe-area-inset-bottom) + 14px);
+  background: linear-gradient(#8fd3ff, #cdeeff); color: #1f2a44; font-family: inherit; font-size: 16px;
+  touch-action: none; user-select: none; -webkit-user-select: none; overflow: hidden;
 }
-.ml-mini__top {
-  width: 100%;
-  max-width: 420px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 44px;
+.ml-mini[data-game='hold'] { --dock: 268px; }
+.ml-mini[data-game='compare'] { --dock: 316px; }
+
+.ml-mini__top { width: 100%; max-width: 520px; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; }
+.ml-mini__title { margin: 2px; padding: 7px 16px; background: var(--ml-cream); box-shadow: var(--ml-frame2); font-size: 18px; font-weight: 800; letter-spacing: 0.02em; }
+.ml-mini__goal {
+  display: none; margin: 2px; padding: 12px 14px; background: var(--ml-cream); box-shadow: var(--ml-frame2); font-size: 16px; line-height: 1.55; font-weight: 600;
 }
-.ml-mini__title {
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  padding: 6px 14px;
-  background: #fff6dc;
-  border: 2px solid #2b3a55;
-  border-radius: 999px;
+.ml-mini__goal strong { display: inline-block; margin-right: 8px; padding: 1px 8px; background: var(--ml-sun); box-shadow: var(--ml-frame2); font-size: 14px; font-weight: 800; }
+
+.ml-mini__skip, .ml-mini__btn {
+  min-height: 48px; min-width: 48px; border: 0; border-radius: 0; font: inherit; font-weight: 800; color: #1f2a44; cursor: pointer;
+  box-shadow: var(--ml-frame2), inset 0 -4px 0 0 var(--ml-ledge, #e6d6a6);
+  transition: transform 140ms var(--ml-ease), background-color 140ms var(--ml-ease);
 }
-.ml-mini__skip,
-.ml-mini__btn {
-  min-height: 44px;
-  min-width: 44px;
-  border-radius: 12px;
-  font: inherit;
-  font-weight: 700;
-  color: #1f2a44;
-  cursor: pointer;
+.ml-mini__skip { margin: 2px; padding: 0 18px 4px; background: var(--ml-cream); font-size: 16px; }
+.ml-mini__btn { --ml-ledge: #e0b52c; margin: 2px; padding: 0 24px 4px; background: var(--ml-sun); font-size: 17px; }
+.ml-mini__skip:active, .ml-mini__btn:active:not(:disabled) { transform: scale(0.97); }
+@media (hover: hover) and (pointer: fine) {
+  .ml-mini__skip:hover, .ml-mini__btn:hover:not(:disabled) { background-color: #fff; }
+  .ml-mini__btn:hover:not(:disabled) { background-color: #ffe27a; }
 }
-.ml-mini__skip {
-  padding: 0 14px;
-  background: #fff6dc;
-  border: 2px solid #2b3a55;
-}
-.ml-mini__btn {
-  padding: 0 22px;
-  background: #ffd85a;
-  border: 2px solid #2b3a55;
-  box-shadow: 0 3px 0 #2b3a55;
-}
-.ml-mini button:focus-visible { outline: 3px solid #ff8a6b; outline-offset: 2px; }
-.ml-mini__canvasWrap {
-  position: relative;
-  width: min(88vw, 36vh);
-}
+.ml-mini button:focus-visible { outline: none; box-shadow: var(--ml-frame2), var(--ml-halo); }
+
+/* the board: as tall as the phone allows (the controls under it keep their own room), 2:3 */
+.ml-mini__canvasWrap { position: relative; width: min(100%, calc((100dvh - var(--chrome) - var(--dock)) * 2 / 3)); }
 .ml-mini__canvas {
-  display: block;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 2 / 3;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-  border: 3px solid #2b3a55;
-  border-radius: 14px;
-  background: #cdeeff;
+  display: block; width: 100%; height: auto; aspect-ratio: 2 / 3; image-rendering: pixelated; image-rendering: crisp-edges;
+  background: #cdeeff; box-shadow: var(--ml-frame), 5px 6px 0 3px var(--ml-shadow);
 }
+
+/* intro card (beside / under the board) and end card (over the finished board) */
 .ml-mini__card {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 88%;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 18px;
-  background: #fff6dc;
-  border: 3px solid #2b3a55;
-  border-radius: 18px;
-  box-shadow: 0 6px 0 rgba(43, 58, 85, 0.25);
-  text-align: center;
-  animation: ml-mini-pop 200ms ease-out;
+  box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 16px 16px 18px;
+  background: var(--ml-cream); box-shadow: var(--ml-frame), 5px 6px 0 3px var(--ml-shadow); text-align: center;
 }
-.ml-mini__how,
-.ml-mini__lesson { margin: 0; line-height: 1.5; font-weight: 600; }
+.ml-mini__card--intro { width: 100%; max-width: 520px; margin: 3px; animation: ml-mini-rise 200ms var(--ml-ease) both; }
+.ml-mini__card--result {
+  position: absolute; left: 50%; top: 50%; width: 88%; transform: translate(-50%, -50%); animation: ml-mini-pop 200ms var(--ml-ease) both;
+}
+.ml-mini__how, .ml-mini__lesson { margin: 0; font-size: 16px; line-height: 1.55; font-weight: 600; }
 .ml-mini__label { margin: 0; color: #2b3a55; font-size: 13px; font-weight: 700; }
-.ml-mini__score { margin: 0; font-size: 28px; font-weight: 800; color: #1f2a44; }
-.ml-mini__bar,
-.ml-mini__timer {
-  width: 100%;
-  height: 10px;
-  background: #ffffff;
-  border: 2px solid #2b3a55;
-  border-radius: 6px;
-  overflow: hidden;
+.ml-mini__score { margin: 0; font-size: 20px; font-weight: 800; }
+.ml-mini__big { font: 800 22px/1.2 var(--ml-num); font-variant-numeric: tabular-nums; }
+.ml-mini__muted { color: var(--ml-muted); }
+.ml-mini__stamp {
+  padding: 4px 14px; color: var(--ml-stamp); font-size: 22px; font-weight: 900; letter-spacing: 0.08em; transform: rotate(-6deg);
+  box-shadow: 0 -3px 0 0 var(--ml-stamp), 0 3px 0 0 var(--ml-stamp), -3px 0 0 0 var(--ml-stamp), 3px 0 0 0 var(--ml-stamp); animation: ml-stamp 240ms steps(4, end) both;
 }
-.ml-mini__bar-fill,
-.ml-mini__timer-fill {
-  height: 100%;
-  background: #ff8a6b;
-  transition: width 120ms linear;
-}
-.ml-mini__hud {
-  width: 100%;
-  max-width: 420px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  flex: 1;
-  min-height: 0;
-}
-.ml-mini__stats {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 14px;
-  font-weight: 700;
-  color: #1f2a44;
-}
-.ml-mini__stats span {
-  padding: 4px 10px;
-  background: #fff6dc;
-  border: 2px solid #2b3a55;
-  border-radius: 999px;
-}
-.ml-mini__hold {
-  flex: 1;
-  min-height: 120px;
-  font-size: 20px;
-  background: #7ed07a;
-  border-color: #2b3a55;
-}
-.ml-mini__hold.is-on { background: #b6e88a; box-shadow: inset 0 4px 0 rgba(43, 58, 85, 0.25); }
+.ml-mini__bar, .ml-mini__timer { width: 100%; height: 12px; background: #fff; box-shadow: var(--ml-frame2); overflow: hidden; margin: 2px 0; }
+.ml-mini__bar-fill, .ml-mini__timer-fill { height: 100%; background: var(--ml-coral); transition: width 120ms linear; }
+
+/* the game's own controls */
+.ml-mini__hud { width: 100%; max-width: 520px; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.ml-mini__stats { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 15px; font-weight: 700; }
+.ml-mini__stats span { margin: 2px; padding: 5px 10px; background: var(--ml-cream); box-shadow: var(--ml-frame2); }
+.ml-mini__stats .ml-mini__big { font-size: 18px; }
+.ml-mini__verdict { margin: 0; min-height: 24px; font-size: 16px; font-weight: 800; text-align: center; }
+.ml-mini__hold { flex: 1; min-height: 120px; padding-bottom: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: var(--ml-green); --ml-ledge: var(--ml-green-deep); }
+.ml-mini__hold.is-on { background: #b6e88a; }
+.ml-mini__hold-main { font-size: 22px; font-weight: 900; }
+.ml-mini__hold-sub { font-size: 14px; font-weight: 600; color: var(--ml-ink); }
 .ml-mini__funds { display: flex; flex-direction: column; gap: 10px; }
 .ml-mini__fund {
-  min-height: 56px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  padding: 6px 14px;
-  background: #fff6dc;
-  color: #1f2a44;
-  border: 2px solid #2b3a55;
-  border-radius: 14px;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  animation: ml-mini-slide 220ms ease-out both;
+  min-height: 56px; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin: 2px; padding: 8px 14px 10px; background: var(--ml-cream); color: #1f2a44;
+  border: 0; border-radius: 0; font: inherit; font-size: 17px; text-align: left; cursor: pointer; box-shadow: var(--ml-frame2), inset 0 -4px 0 0 #e6d6a6;
+  transition: transform 140ms var(--ml-ease); animation: ml-mini-rise 140ms var(--ml-ease) both;
 }
+.ml-mini__fund:active:not(:disabled) { transform: scale(0.97); }
 .ml-mini__fund:disabled { opacity: 0.6; cursor: default; }
-.ml-mini__fund span { font-size: 13px; color: #2b3a55; }
-@keyframes ml-mini-pop {
-  from { transform: translate(-50%, -50%) scale(0.92); opacity: 0; }
-  to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+.ml-mini__fund span { font-size: 14px; color: #2b3a55; }
+@media (hover: hover) and (pointer: fine) { .ml-mini__fund:hover:not(:disabled) { background: #fff; } }
+
+@keyframes ml-mini-pop { from { transform: translate(-50%, -50%) scale(0.95); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+@keyframes ml-mini-rise { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* desktop: the board on the left at the window's height, the panel beside it */
+@media (min-width: 900px) and (orientation: landscape) {
+  .ml-mini {
+    grid-template-columns: auto minmax(320px, 400px); grid-template-rows: auto auto 1fr; justify-content: center; column-gap: 32px; row-gap: 14px;
+    padding: 20px 24px;
+  }
+  .ml-mini__canvasWrap { grid-column: 1; grid-row: 1 / span 3; width: min(calc((100dvh - 40px) * 2 / 3), 56vw); }
+  .ml-mini__top { grid-column: 2; grid-row: 1; max-width: none; align-self: start; }
+  .ml-mini__title { font-size: 22px; }
+  .ml-mini__goal { display: block; grid-column: 2; grid-row: 2; width: 100%; }
+  .ml-mini__hud, .ml-mini__card--intro { grid-column: 2; grid-row: 3; align-self: start; width: 100%; max-width: none; }
+  .ml-mini__card--intro .ml-mini__how { display: none; }
+  .ml-mini__card--result { width: 80%; }
 }
-@keyframes ml-mini-slide {
-  from { transform: translateX(30%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+/* a short landscape phone: board left, everything else right, scaled to the height */
+@media (max-height: 520px) and (orientation: landscape) and (max-width: 899px) {
+  .ml-mini {
+    grid-template-columns: auto minmax(220px, 340px); grid-template-rows: auto 1fr; justify-content: center; column-gap: 20px; row-gap: 8px; padding: 8px 14px;
+  }
+  .ml-mini__canvasWrap { grid-column: 1; grid-row: 1 / span 2; width: min(calc((100dvh - 24px) * 2 / 3), 46vw); }
+  .ml-mini__top { grid-column: 2; grid-row: 1; max-width: none; }
+  .ml-mini__hud, .ml-mini__card--intro { grid-column: 2; grid-row: 2; align-self: start; width: 100%; max-width: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .ml-mini *,
-  .ml-mini *::before,
-  .ml-mini *::after { animation: none !important; transition: none !important; }
+  .ml-mini *, .ml-mini *::before, .ml-mini *::after { animation: none !important; transition: none !important; }
 }

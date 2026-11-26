@@ -40,20 +40,48 @@ export function ChatFrame({ testId, emote, emoteKey, talking, term, peek, fit = 
     const box = thread.current;
     const content = inner.current;
     if (!box || !content) return undefined;
+    let pinned = 0; // where toEnd last left the scroll; moving away from it means the player scrolled
     // newest bubble at the bottom; a tall one (the receipt) keeps the line before it in view instead
     const toEnd = () => {
       const last = content.lastElementChild as HTMLElement | null;
       const prev = last?.previousElementSibling as HTMLElement | null;
       const gap = prev ? prev.getBoundingClientRect().top - content.getBoundingClientRect().top : 0;
-      box.scrollTop = last?.dataset.scroll === 'from-previous' && prev ? gap - 6 : box.scrollHeight;
+      const fromPrev = last?.dataset.scroll === 'from-previous' && prev;
+      box.scrollTop = fromPrev ? gap - 6 : box.scrollHeight;
+      pinned = box.scrollTop;
+      // the one older turn the top edge slices through is hidden (until the player scrolls up), so the first bubble in view is always whole
+      for (const c of Array.from(content.children)) c.removeAttribute('data-fold');
+      if (fromPrev) return;
+      const edge = box.getBoundingClientRect().top;
+      const sliced = Array.from(content.children).slice(0, -1).find((c) => { const r = c.getBoundingClientRect(); return r.top < edge - 1 && r.bottom > edge + 1; });
+      sliced?.setAttribute('data-fold', '');
+    };
+    // a soft fade where the thread is cut off, so a half-scrolled bubble reads as scrolled and not as broken
+    const cuts = () => {
+      if (Math.abs(box.scrollTop - pinned) > 4) for (const c of Array.from(content.children)) c.removeAttribute('data-fold');
+      box.toggleAttribute('data-cut-t', box.scrollTop > 2 && !content.querySelector('[data-fold]'));
+      box.toggleAttribute('data-cut-b', box.scrollTop + box.clientHeight < box.scrollHeight - 2);
     };
     toEnd();
+    cuts();
     const watcher = new ResizeObserver(() => {
       toEnd();
-      if (fit && foot.current && content.lastElementChild) report((head.current?.offsetHeight ?? 0) + (content.lastElementChild as HTMLElement).offsetHeight + THREAD_PAD + foot.current.offsetHeight + CHAT_MARGIN);
+      cuts();
+      if (fit && foot.current && content.lastElementChild) {
+        // the reply list (or the receipt) plus the line before it, so Slip's question is never what gets cut
+        const last = content.lastElementChild as HTMLElement;
+        const prev = last.previousElementSibling as HTMLElement | null;
+        const span = prev ? content.getBoundingClientRect().bottom - prev.getBoundingClientRect().top : last.offsetHeight;
+        report((head.current?.offsetHeight ?? 0) + span + THREAD_PAD + foot.current.offsetHeight + CHAT_MARGIN);
+      }
     });
     watcher.observe(content);
-    return () => watcher.disconnect();
+    watcher.observe(box); // the sheet changing height (a snap, a drag) keeps the newest line in view too
+    box.addEventListener('scroll', cuts, { passive: true });
+    return () => {
+      watcher.disconnect();
+      box.removeEventListener('scroll', cuts);
+    };
   }, [fit, report, hasFoot]);
 
   return (

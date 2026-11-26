@@ -82,9 +82,20 @@ export const ICONS: Readonly<Record<string, Sprite>> = {
   storm: sprite([
     '...ooo...', '..oBBBo..', '.oBBBBoo.', 'oBBBBBBBo', 'oBBBBBBBo', '.ooyooooo', '...yyo...', '..yyyo...', '...yo....',
   ]),
+  pin: sprite(['..ooooo..', '.orrrrro.', 'orrwwrrro', 'orrwwrrro', 'orrrrrrro', '.orrrrro.', '..orrro..', '...oro...', '....o....']),
   rainbow: sprite([
     '..ooooo..', '.orrrrro.', 'orrgggrro', 'orgg.ggro', 'ogg...ggo', 'og.....go', 'ow.....wo', '.........', '.........',
   ]),
+};
+
+/** One 8x8 icon per life quality, for the hexagon's axis labels. */
+export const QUALITY_ICONS: Readonly<Record<'wealth' | 'safety' | 'joy' | 'bonds' | 'freedom' | 'growth', Sprite>> = {
+  wealth: ICONS.coin,
+  safety: sprite(['.oooooo.', 'otttttto', 'otwtttto', 'otttttto', '.otttto.', '.otttto.', '..otto..', '...oo...']),
+  joy: ICONS.heart,
+  bonds: ICONS.people,
+  freedom: sprite(['........', 'oo....oo', 'obo..obo', 'obboobbo', '.obbbbo.', '..obbo..', '...oo...', '........']),
+  growth: sprite(['........', '.oo..oo.', 'oggooggo', 'oggGGggo', '.ooGGoo.', '...GG...', '...GG...', '..oooo..']),
 };
 
 /** Small mono glyphs for choice tags (ink + paper on a coloured tile). */

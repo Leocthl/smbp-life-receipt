@@ -1,0 +1,27 @@
+/* The outgoing slip: faster than the enter (240ms), ease-out, and it cannot be touched */
+.ml-stage.ml-stage--exit { animation: ml-stage-exit 130ms cubic-bezier(0.23, 1, 0.32, 1) both; pointer-events: none; z-index: 4; }
+@keyframes ml-stage-exit { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(10px); } }
+@media (min-width: 900px) { @keyframes ml-stage-exit { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateX(10px); } } }
+
+/* Milestone toasts: top centre under the bar on phones, under the bar at the left on desktop. The container ignores the pointer; only the toast takes taps. */
+.ml-toasts { position: fixed; z-index: 7; top: calc(100px + env(safe-area-inset-top)); left: 60px; right: 60px; display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; }
+.ml-toast {
+  position: relative; display: inline-flex; align-items: center; gap: 10px; min-height: 44px; max-width: 100%; padding: 6px 14px 8px; pointer-events: auto; cursor: pointer;
+  border: 0; border-radius: 0; background: var(--ml-sun); color: var(--ml-ink); font: 800 16px/1.2 var(--ml-font); box-shadow: var(--ml-frame), 4px 5px 0 2px var(--ml-shadow);
+  animation: ml-toast-in 420ms cubic-bezier(0.3, 1.5, 0.5, 1) both, ml-toast-out 300ms ease-in 2900ms both;
+}
+.ml-toast:focus-visible { outline: none; box-shadow: var(--ml-frame), var(--ml-halo); }
+@keyframes ml-toast-in { from { opacity: 0; transform: translateY(-14px) scale(0.8); } to { opacity: 1; transform: none; } }
+@keyframes ml-toast-out { to { opacity: 0; transform: translateY(-8px); } }
+.ml-toast__sparks { position: absolute; left: 50%; top: 50%; width: 0; height: 0; pointer-events: none; }
+.ml-toast__sparks i { position: absolute; left: -3px; top: -3px; width: 6px; height: 6px; background: var(--ml-coral); animation: ml-spark 900ms steps(8, end) 120ms both; }
+.ml-toast__sparks i:nth-child(4n + 2) { background: var(--ml-turquoise); }
+.ml-toast__sparks i:nth-child(4n + 3) { background: var(--ml-green); }
+.ml-toast__sparks i:nth-child(4n) { background: var(--ml-paper); box-shadow: 0 0 0 2px var(--ml-ink); }
+@keyframes ml-spark { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.3); } }
+@media (min-width: 900px) { .ml-toasts { left: 16px; right: auto; align-items: flex-start; top: 124px; } }
+@media (prefers-reduced-motion: reduce) {
+  .ml-toast { animation: ml-toast-fade 3200ms linear both; }
+  .ml-toast__sparks { display: none; }
+  @keyframes ml-toast-fade { 0% { opacity: 0; } 8%, 90% { opacity: 1; } 100% { opacity: 0; } }
+}

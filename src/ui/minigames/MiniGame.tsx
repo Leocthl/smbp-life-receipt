@@ -17,6 +17,7 @@ interface BoardProps {
   seed: number;
   lang: Lang;
   running: boolean;
+  dock?: ReactNode;
   auto: boolean;
   reduced: boolean;
   onFinish(r: MiniGameResult): void;
@@ -37,7 +38,7 @@ function Board({ id, ...rest }: BoardProps) {
 
 /** One 15–25 second money mini-game in a full-screen overlay: intro, play, result, with skip always visible. */
 export function MiniGame({ id, seed, onDone, onSkip }: MiniGameProps) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const [auto] = useState(() => new URLSearchParams(window.location.search).get('auto') === '1');
   const [reduced] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [phase, setPhase] = useState<Phase>(auto ? 'play' : 'intro');
@@ -49,15 +50,15 @@ export function MiniGame({ id, seed, onDone, onSkip }: MiniGameProps) {
   const start = useCallback(() => setPhase('play'), []);
   const title = miniText(lang, 'mini.' + id + '.title');
   return (
-    <div className="ml-mini" role="dialog" aria-label={title}>
+    <div className="ml-mini" role="dialog" aria-label={title} data-game={id} data-phase={phase}>
       <header className="ml-mini__top">
         <span className="ml-mini__title">{title}</span>
         <button type="button" className="ml-mini__skip" onClick={onSkip}>
           {miniText(lang, 'mini.skip')}
         </button>
       </header>
-      <Board key={id + '-' + seed} id={id} seed={seed} lang={lang} running={phase === 'play'} auto={auto} reduced={reduced} onFinish={finish}>
-        {phase === 'intro' && <IntroCard lang={lang} id={id} onStart={start} />}
+      <p className="ml-mini__goal"><strong>{t('mini.goalLabel')}</strong>{miniText(lang, 'mini.' + id + '.how')}</p>
+      <Board key={id + '-' + seed} id={id} seed={seed} lang={lang} running={phase === 'play'} auto={auto} reduced={reduced} onFinish={finish} dock={phase === 'intro' ? <IntroCard lang={lang} id={id} onStart={start} /> : undefined}>
         {phase === 'result' && result && <ResultCard lang={lang} result={result} onDone={() => onDone(result)} />}
       </Board>
     </div>

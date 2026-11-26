@@ -4,12 +4,12 @@
 @media (max-width: 899px) {
   body.ml-is-3d .ml-stage[data-sheet] {
     height: var(--ml-sheet-h, 55dvh); display: flex; flex-direction: column; padding-bottom: env(safe-area-inset-bottom);
-    transition: height 240ms var(--ml-ease);
+    transition: height 280ms var(--ml-ease-drawer);
   }
   body.ml-is-3d .ml-stage[data-sheet][data-drag] { transition: none; }
   .ml-stage[data-snap="peek"] { --ml-sheet-h: calc(120px + env(safe-area-inset-bottom)); }
   .ml-stage[data-snap="half"] { --ml-sheet-h: 55dvh; }
-  .ml-stage[data-snap="full"] { --ml-sheet-h: min(90dvh, calc(100dvh - 92px - env(safe-area-inset-top))); }
+  .ml-stage[data-snap="full"] { --ml-sheet-h: min(90dvh, calc(100dvh - 100px - env(safe-area-inset-top))); }
 
   /* a 44px tap target; the visible tab sits on the bottom edge so it joins the panel */
   .ml-stage[data-sheet] [data-grab] { touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; }
@@ -40,6 +40,7 @@
   .ml-stage[data-snap="half"] .ml-chat[data-testid="result"] .ml-chat__peek { display: none; }
   .ml-stage[data-snap="half"] .ml-chat[data-testid="result"] .ml-chat__mood { display: block; }
   .ml-stage[data-snap="peek"] .ml-receipt__body { overflow: hidden; }
+  .ml-stage[data-snap="peek"] .ml-receipt__foot { display: none; }
   .ml-stage[data-snap="peek"] .ml-chat__thread, .ml-stage[data-snap="peek"] .ml-chat__foot { display: none; }
 }
 @media (max-width: 899px) and (prefers-reduced-motion: reduce) { body.ml-is-3d .ml-stage[data-sheet] { transition: none; } }

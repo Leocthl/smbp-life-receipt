@@ -38,7 +38,10 @@ export function IntroScreen({ state, onGo }: { state: GameState; onGo: () => voi
   const { t, lang } = useI18n();
   const c = state.character;
   return (
-    <Receipt testId="intro">
+    <Receipt
+      testId="intro"
+      foot={<button type="button" className="ml-btn ml-btn--primary ml-btn--big" data-testid="begin-life" onClick={onGo} autoFocus>{t('intro.go')}</button>}
+    >
       <h2 className="ml-summary__title">{t('intro.title')}</h2>
       <Line label={t('intro.family')} value={t(`intro.tier.${c.familyTier}`)} />
       <Line label={t('intro.allowance')} value={money(c.familyAllowance, lang)} />
@@ -49,7 +52,6 @@ export function IntroScreen({ state, onGo }: { state: GameState; onGo: () => voi
       <Line label={t('intro.talent')} value={c.talents.map((x) => t(`talent.${x}`)).join(', ')} />
       <Line icon={ICONS.coin} label={t('intro.cash')} value={money(state.cash, lang)} strong />
       <p className="ml-fine">{t('intro.hidden')}</p>
-      <button type="button" className="ml-btn ml-btn--primary ml-btn--big" data-testid="begin-life" onClick={onGo} autoFocus>{t('intro.go')}</button>
     </Receipt>
   );
 }

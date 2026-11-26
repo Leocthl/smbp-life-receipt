@@ -14,7 +14,14 @@ export function GoalScreen({ onPick }: { onPick: (g: Goal) => void }) {
   const { t } = useI18n();
   const [goal, setGoal] = useState<Goal | null>(null);
   return (
-    <Receipt testId="goal">
+    <Receipt
+      testId="goal"
+      foot={(
+        <button type="button" className="ml-btn ml-btn--primary" data-testid="goal-go" disabled={!goal} onClick={() => goal && onPick(goal)}>
+          {t('goalq.go')}
+        </button>
+      )}
+    >
       <h2 className="ml-summary__title">{t('goalq.title')}</h2>
       <div className="ml-card__choices" role="group" aria-label={t('goalq.title')}>
         {GOALS.map((g) => (
@@ -23,9 +30,6 @@ export function GoalScreen({ onPick }: { onPick: (g: Goal) => void }) {
           </ChoiceButton>
         ))}
       </div>
-      <button type="button" className="ml-btn ml-btn--primary" data-testid="goal-go" disabled={!goal} onClick={() => goal && onPick(goal)}>
-        {t('goalq.go')}
-      </button>
     </Receipt>
   );
 }

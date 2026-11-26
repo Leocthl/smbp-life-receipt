@@ -21,7 +21,15 @@ export function SummaryScreen({ state, summary, onNext }: { state: GameState; su
   const other = summary.cashChange - summary.income + summary.spending;
   const notices = [...new Set(summary.notices.map((n) => n.split(':')[0]))].filter((n) => NOTICE_KEYS.includes(n));
   return (
-    <Receipt testId="summary" className="ml-summary">
+    <Receipt
+      testId="summary"
+      className="ml-summary"
+      foot={(
+        <button type="button" className="ml-btn ml-btn--primary" data-testid="summary-next" onClick={onNext} autoFocus>
+          {state.done ? t('result.next') : t('summary.next')}
+        </button>
+      )}
+    >
       <h2 className="ml-summary__title">{t('summary.title', { age: ageLabel(summary.age) })}</h2>
       <p className="ml-summary__market" data-regime={summary.regime}>
         <PixelIcon sprite={WEATHER[summary.regime]} scale={3} />
@@ -36,18 +44,15 @@ export function SummaryScreen({ state, summary, onNext }: { state: GameState; su
       {summary.fees > 1 && <Line label={t('summary.fees')} value={money(-summary.fees, lang)} />}
       {summary.interest > 1 && <Line label={t('summary.interest')} value={money(-summary.interest, lang)} />}
       <h3 className="ml-summary__sub">{t('summary.portfolio')}</h3>
-      {assets.length === 0 && <Line label={t('none')} value="" />}
+      {assets.length === 0 && <p className="ml-empty">{t('summary.noAssets')}</p>}
       {assets.map(([k, v]) => <Line key={k} label={t(`asset.${k}`)} value={money(v, lang)} />)}
       <h3 className="ml-summary__sub">{t('summary.debts')}</h3>
-      {summary.debts.length === 0 && <Line label={t('summary.noDebt')} value="" />}
+      {summary.debts.length === 0 && <p className="ml-empty">{t('summary.noDebt')}</p>}
       {debts.map((x) => <Line key={`${x.kind}-${x.rate}`} label={`${t(`debt.${x.kind}`)} ${(x.rate * 100).toFixed(1)}%`} value={money(-x.balance, lang)} tone="down" />)}
       {[...new Set(summary.reveals)].map((r) => (
         <p key={r} className="ml-card__reveal" data-testid="reveal"><strong>{t('card.reveal')}</strong> {t(`trait.${r}`)}</p>
       ))}
       {notices.map((n) => <p key={n} className="ml-result__notice">{t(`notice.${n}`)}</p>)}
-      <button type="button" className="ml-btn ml-btn--primary" data-testid="summary-next" onClick={onNext} autoFocus>
-        {state.done ? t('result.next') : t('summary.next')}
-      </button>
     </Receipt>
   );
 }

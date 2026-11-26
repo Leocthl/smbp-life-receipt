@@ -4,7 +4,7 @@ import type { MiniGameId, MiniGameResult } from './types';
 
 export function IntroCard({ lang, id, onStart }: { lang: Lang; id: MiniGameId; onStart(): void }) {
   return (
-    <div className="ml-mini__card ml-mini__pix">
+    <div className="ml-mini__card ml-mini__card--intro ml-mini__pix">
       <p className="ml-mini__how">{miniText(lang, 'mini.' + id + '.how')}</p>
       <button type="button" className="ml-mini__btn ml-mini__pix" autoFocus onClick={onStart}>
         {miniText(lang, 'mini.tapStart')}

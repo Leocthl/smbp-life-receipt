@@ -64,7 +64,9 @@ export function useSheet(ref: RefObject<HTMLElement>, active: boolean, slipKey: 
 
   useEffect(() => { // tell the stage how much of the screen the sheet (or, on a walk, the prompt) covers
     if (!on) { // desktop: the slip is docked on the right, so the room is centred in what is left
-      const dock = active && wide && ref.current ? window.innerWidth - ref.current.offsetLeft : 0; // offsetLeft ignores the slide-in transform
+      // the start screen docks too: its title and card stand in a right-hand column, the room is centred in the rest
+      const docked = wide && ref.current && (active || ref.current.querySelector('.ml-start'));
+      const dock = docked && ref.current ? window.innerWidth - ref.current.offsetLeft : 0; // offsetLeft ignores the slide-in transform
       const phoneWalk = walking && !wide;
       emitInset(phoneWalk ? WALK_INSET_PX : 0, phoneWalk ? topInset() : 0, dock);
       return undefined;

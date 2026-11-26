@@ -65,7 +65,24 @@ function audit({ desktop, where }) {
   }
   for (const b of document.querySelectorAll('button')) {
     const r = b.getBoundingClientRect();
-    if (r.width && b.closest('.ml-stage, .ml-hud, .ml-flow-walk') && !hidden(b) && r.height < 40) problems.push(`button too short (${Math.round(r.height)}px): ${(b.textContent ?? '').slice(0, 24)}`);
+    if (r.width && b.closest('.ml-stage, .ml-hud, .ml-flow-walk, .ml-flow-hexpanel, .ml-mini') && !hidden(b) && r.height < (b.closest('.ml-hud') ? 40 : 43.5)) problems.push(`button too short (${Math.round(r.height)}px): ${(b.textContent ?? '').slice(0, 24)}`);
+  }
+  // type scale: nothing a player has to read is under 12px (the HUD's own labels belong to the HUD)
+  for (const el of document.querySelectorAll('.ml-stage *, .ml-flow-walk *, .ml-flow-hexpanel *, .ml-mini *')) {
+    if (el.closest('svg') && !el.matches('text') || hidden(el) || el.closest('.ml-sr')) continue;
+    const own = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
+    if (own && parseFloat(getComputedStyle(el).fontSize) < 12) problems.push(`text under 12px (${getComputedStyle(el).fontSize}): ${name(el)} "${(el.textContent ?? '').trim().slice(0, 18)}"`);
+  }
+  // the hexagon fills its panel: at least 280px wide on a phone, 360px on a desktop
+  const radar = document.querySelector('.ml-flow-hexpanel .ml-hex__svg');
+  if (radar && radar.getBoundingClientRect().width < (desktop ? 360 : 280) - 1) problems.push(`hexagon too small (${Math.round(radar.getBoundingClientRect().width)}px)`);
+  // a receipt's action sits under its scrolling body, never over it
+  const rbody = document.querySelector('.ml-receipt--foot .ml-receipt__body'), rfoot = document.querySelector('.ml-receipt--foot .ml-receipt__foot');
+  if (rbody && rfoot && rfoot.getBoundingClientRect().height && rbody.getBoundingClientRect().bottom > rfoot.getBoundingClientRect().top + 1) problems.push('receipt body runs under its action button');
+  // a mini-game fits the window: nothing below or above the screen
+  for (const el of document.querySelectorAll('.ml-mini, .ml-mini *')) {
+    const r = el.getBoundingClientRect();
+    if (r.width && !hidden(el) && !el.closest('canvas') && (r.bottom > vh + 1 || r.top < -1)) problems.push(`mini-game element outside the window (${Math.round(r.top)}..${Math.round(r.bottom)} of ${vh}): ${name(el)}`);
   }
   return problems.map((x) => `[${where}] ${x}`);
 }

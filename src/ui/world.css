@@ -33,7 +33,8 @@ body.ml-is-3d .ml-stage:has(.ml-start) > .ml-receipt { pointer-events: auto; }
   body.ml-is-3d .ml-receipt__body { padding-bottom: 20px; }
   .ml-receipt__handle { display: none; }
   body.ml-is-3d .ml-app__bar { top: 16px; right: auto; left: 16px; }
-  body.ml-is-3d .ml-stage:has(.ml-start) { top: 16px; bottom: 16px; left: 22px; width: auto; max-height: none; flex-direction: row; align-items: center; }
-  body.ml-is-3d .ml-stage:has(.ml-start) > .ml-logo { flex: 1; padding: 0 24px 0 0; }
-  body.ml-is-3d .ml-stage:has(.ml-start) > .ml-receipt { width: 420px; flex: none; }
+  /* start, desktop: title over the start card in one column on the right (where the slip docks in the game); the room is centred in the rest */
+  body.ml-is-3d .ml-stage:has(.ml-start) { top: 16px; bottom: 16px; right: 22px; width: 440px; max-height: none; justify-content: center; align-items: stretch; gap: 26px; }
+  body.ml-is-3d .ml-stage:has(.ml-start) > .ml-logo { flex: none; padding: 0; }
+  body.ml-is-3d .ml-stage:has(.ml-start) > .ml-receipt { width: 100%; flex: none; }
 }
