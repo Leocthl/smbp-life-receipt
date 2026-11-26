@@ -98,3 +98,46 @@
 .ml-free__foot .ml-btn {
   margin: 0;
 }
+
+/* Responsive safeguards for .ml-free-bar and free-action controls across 390px mobile and desktop */
+.ml-free-bar__copy,
+.ml-free-bar__actions > * {
+  min-width: 0;
+}
+
+.ml-free-bar__actions .ml-btn {
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 420px) {
+  .ml-free-bar {
+    padding: 8px 10px 10px;
+    gap: 6px;
+  }
+  .ml-free-bar__actions {
+    gap: 6px;
+  }
+  .ml-free-bar__actions .ml-btn {
+    font-size: 13px;
+    padding: 8px 6px 10px;
+  }
+  .ml-free__pills {
+    gap: 6px;
+  }
+  .ml-free__pill {
+    font-size: 12px;
+  }
+  .ml-free__foot {
+    grid-template-columns: 1fr 1.25fr;
+    gap: 8px;
+  }
+}
+
+@media (min-width: 900px) {
+  .ml-free-bar {
+    max-width: min(480px, calc(100vw - 44px));
+  }
+}

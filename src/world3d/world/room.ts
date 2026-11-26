@@ -9,44 +9,44 @@ const WALL_BACK = 0xe4dcff, WALL_SIDE = 0xffe0c8;
 export function floorAndWalls(ctx: Ctx, x1: number): void {
   const b = ctx.L.solid, cx = (ROOM.x0 + x1) / 2, w = x1 - ROOM.x0;
   box(b, cx, 0, w + 0.2, 6.2, -0.4, 0.4, 0xa8744a, { density: 30, top: 0xffc29b, edge: 0.55 });
-  for (let z = -2.6; z < 3; z += 0.6) line(b, [ROOM.x0, 0.01, z], [x1, 0.01, z], 0xe8a77a, 0.03, 0.07);
+  for (let z = -2.6; z < 3; z += 0.6) line(b, [ROOM.x0, 0.03, z], [x1, 0.03, z], 0xe8a77a, 0.03, 0.07);
   box(b, (ROOM.x0 + x1) / 2 + 0.125, -3.125, w + 0.25, 0.25, 0, ROOM.h, WALL_BACK, { density: 40, top: 0xfff6dc, flat: true, jitter: 0.004 });
   box(b, -3.125, 0, 0.25, 6.5, 0, ROOM.h, WALL_SIDE, { density: 40, top: 0xfff6dc, flat: true, jitter: 0.004 });
-  panel(b, 'z', [cx, 0.14, -2.98], w, 0.28, 0xfff6dc, { density: 60 });
-  panel(b, 'x', [-2.98, 0.14, 0], 6, 0.28, 0xfff6dc, { density: 60 });
+  panel(b, 'z', [cx, 0.14, -2.95], w, 0.28, 0xfff6dc, { density: 60, depthBias: 0.06 });
+  panel(b, 'x', [-2.95, 0.14, 0], 6, 0.28, 0xfff6dc, { density: 60, depthBias: 0.06 });
   // Finished dollhouse exterior backing + plinth trim for 360-degree camera orbit
-  panel(b, 'z', [cx - 0.06, ROOM.h / 2, -3.26], w + 0.25, ROOM.h, 0xc9d3e6, { density: 36, shade: 0.88 });
-  panel(b, 'x', [-3.26, ROOM.h / 2, 0], 6.5, ROOM.h, 0x9aa8c4, { density: 36, shade: 0.85 });
-  panel(b, 'z', [cx - 0.06, 0.16, -3.27], w + 0.28, 0.32, 0x4a5578, { density: 48 });
-  panel(b, 'x', [-3.27, 0.16, 0], 6.55, 0.32, 0x4a5578, { density: 48 });
-  panel(b, 'z', [cx, -0.2, 3.1], w + 0.2, 0.4, 0x6f4a32, { density: 34, shade: 0.82 });
-  panel(b, 'x', [x1 + 0.1, -0.2, 0], 6.2, 0.4, 0x6f4a32, { density: 34, shade: 0.78 });
+  panel(b, 'z', [cx - 0.06, ROOM.h / 2, -3.30], w + 0.25, ROOM.h, 0xc9d3e6, { density: 36, shade: 0.88, depthBias: 0.04 });
+  panel(b, 'x', [-3.30, ROOM.h / 2, 0], 6.5, ROOM.h, 0x9aa8c4, { density: 36, shade: 0.85, depthBias: 0.04 });
+  panel(b, 'z', [cx - 0.06, 0.16, -3.34], w + 0.28, 0.32, 0x4a5578, { density: 48, depthBias: 0.08 });
+  panel(b, 'x', [-3.34, 0.16, 0], 6.55, 0.32, 0x4a5578, { density: 48, depthBias: 0.08 });
+  panel(b, 'z', [cx, -0.2, 3.14], w + 0.2, 0.4, 0x6f4a32, { density: 34, shade: 0.82, depthBias: 0.05 });
+  panel(b, 'x', [x1 + 0.14, -0.2, 0], 6.2, 0.4, 0x6f4a32, { density: 34, shade: 0.78, depthBias: 0.05 });
 }
 
 /** A window in the back wall at x = cx: sky, sun, clouds or rain, and a skyline, so the market's mood shows in the room. */
 export function windowAt(ctx: Ctx, cx: number): void {
-  const { solid, glow } = ctx.L, t = ctx.tone, y = 1.9, w = 1.7, h = 1.6, z = -2.97;
-  panel(solid, 'z', [cx, y, z + 0.01], w + 0.3, h + 0.3, 0xfff6dc, { density: 80 });
-  panel(solid, 'z', [cx, y, z + 0.02], w, h, t.sky, { density: 90 });
-  if (t.sun) glow.blob(cx - 0.4, y + 0.35, z + 0.03, 0.22, 0.22, 0.02, 30, t.sun.color, 0.05);
+  const { solid, glow } = ctx.L, t = ctx.tone, y = 1.9, w = 1.7, h = 1.6, z = -2.95;
+  panel(solid, 'z', [cx, y, z], w + 0.3, h + 0.3, 0xfff6dc, { density: 80, depthBias: 0.05 });
+  panel(solid, 'z', [cx, y, z + 0.03], w, h, t.sky, { density: 90, depthBias: 0.08 });
+  if (t.sun) glow.blob(cx - 0.4, y + 0.35, z + 0.05, 0.22, 0.22, 0.02, 30, t.sun.color, 0.05);
   const cloud = t.cloud;
-  for (let i = 0; i < Math.min(4, 1 + Math.floor(t.clouds / 3)); i += 1) solid.blob(cx - 0.5 + i * 0.5, y + 0.3 + (i % 2) * 0.15, z + 0.04, 0.3, 0.1, 0.02, 24, cloud, 0.05, { sway: 0.03 });
-  panel(solid, 'z', [cx, y - 0.62, z + 0.045], w, 0.32, mix(0x4cc3d9, t.sky, t.rain ? 0.5 : 0), { density: 90 });
-  [[-0.55, 0.45], [-0.15, 0.7], [0.3, 0.5], [0.62, 0.62]].forEach(([dx, hh], i) => panel(solid, 'z', [cx + dx, y - 0.46 + hh / 2, z + 0.05], 0.28, hh, i % 2 ? 0xc9d3e6 : 0xe4dcff, { density: 90 }));
-  if (t.rain) for (let i = 0; i < 14; i += 1) line(solid, [cx - 0.8 + ctx.rnd() * 1.6, y + 0.7, z + 0.08], [cx - 0.85 + ctx.rnd() * 1.6, y + 0.35, z + 0.08], 0xcdeeff, 0.015, 0.03);
-  line(solid, [cx, y - 0.8, z + 0.09], [cx, y + 0.8, z + 0.09], 0xfff6dc, 0.035, 0.04);
-  line(solid, [cx - 0.85, y, z + 0.09], [cx + 0.85, y, z + 0.09], 0xfff6dc, 0.035, 0.04);
-  for (const s of [-1, 1]) panel(solid, 'z', [cx + s * 1.0, y + 0.1, z + 0.12], 0.3, 1.9, ctx.d.bankrupt ? 0x9aa8c4 : 0xff8a6b, { density: 80, sway: 0.02 });
-  if (ctx.d.bankrupt) for (const dy of [-0.4, 0, 0.4]) panel(solid, 'z', [cx, y + dy, z + 0.14], w + 0.2, 0.22, 0x6f4a32, { density: 90 });
-  else if (!t.rain && t.sun) panel(glow, 'y', [cx + 0.4, 0.03, -1.7], 1.5, 2.4, 0xfff0a0, { density: 12, opacity: 0.22, thick: 0.01 });
+  for (let i = 0; i < Math.min(4, 1 + Math.floor(t.clouds / 3)); i += 1) solid.blob(cx - 0.5 + i * 0.5, y + 0.3 + (i % 2) * 0.15, z + 0.06, 0.3, 0.1, 0.02, 24, cloud, 0.05, { sway: 0.03 });
+  panel(solid, 'z', [cx, y - 0.62, z + 0.065], w, 0.32, mix(0x4cc3d9, t.sky, t.rain ? 0.5 : 0), { density: 90, depthBias: 0.12 });
+  [[-0.55, 0.45], [-0.15, 0.7], [0.3, 0.5], [0.62, 0.62]].forEach(([dx, hh], i) => panel(solid, 'z', [cx + dx, y - 0.46 + hh / 2, z + 0.075], 0.28, hh, i % 2 ? 0xc9d3e6 : 0xe4dcff, { density: 90, depthBias: 0.13 }));
+  if (t.rain) for (let i = 0; i < 14; i += 1) line(solid, [cx - 0.8 + ctx.rnd() * 1.6, y + 0.7, z + 0.10], [cx - 0.85 + ctx.rnd() * 1.6, y + 0.35, z + 0.10], 0xcdeeff, 0.015, 0.03);
+  line(solid, [cx, y - 0.8, z + 0.11], [cx, y + 0.8, z + 0.11], 0xfff6dc, 0.035, 0.04);
+  line(solid, [cx - 0.85, y, z + 0.11], [cx + 0.85, y, z + 0.11], 0xfff6dc, 0.035, 0.04);
+  for (const s of [-1, 1]) panel(solid, 'z', [cx + s * 1.0, y + 0.1, z + 0.14], 0.3, 1.9, ctx.d.bankrupt ? 0x9aa8c4 : 0xff8a6b, { density: 80, sway: 0.02, depthBias: 0.15 });
+  if (ctx.d.bankrupt) for (const dy of [-0.4, 0, 0.4]) panel(solid, 'z', [cx, y + dy, z + 0.16], w + 0.2, 0.22, 0x6f4a32, { density: 90, depthBias: 0.17 });
+  else if (!t.rain && t.sun) panel(glow, 'y', [cx + 0.4, 0.07, -1.7], 1.5, 2.4, 0xfff0a0, { density: 12, opacity: 0.22, thick: 0.01, depthBias: 0.10 });
 }
 
 export function bedroom(ctx: Ctx): void {
   const b = ctx.L.solid, g = ctx.L.glow, d = ctx.d;
   const blanket = d.home === 'owner' ? 0xb9a7ff : d.home === 'rent' ? 0x4cc3d9 : 0xff8a6b;
   const rug = d.home === 'owner' ? 0xe4dcff : d.home === 'rent' ? 0xcdeeff : 0xffe0c8;
-  panel(b, 'y', [0.8, 0.02, 0.9], 3.2, 2.4, rug, { density: 20, thick: 0.01 });
-  panel(b, 'y', [0.8, 0.03, 0.9], 2.7, 1.9, stripes(blanket, rug, 1), { density: 20, thick: 0.01, opacity: 0.5 });
+  panel(b, 'y', [0.8, 0.045, 0.9], 3.2, 2.4, rug, { density: 20, thick: 0.01, depthBias: 0.05 });
+  panel(b, 'y', [0.8, 0.06, 0.9], 2.7, 1.9, stripes(blanket, rug, 1), { density: 20, thick: 0.01, opacity: 0.5, depthBias: 0.08 });
   box(b, -1.95, 0.9, 1.9, 3.0, 0, 0.4, 0xa8744a, { density: 60 });
   box(b, -1.95, 0.9, 1.8, 2.9, 0.4, 0.22, 0xfff6dc, { density: 70, top: 0xfff6dc });
   box(b, -1.95, 1.5, 1.82, 1.7, 0.6, 0.1, blanket, { density: 80, edge: 0.4 });
@@ -67,7 +67,7 @@ export function bedroom(ctx: Ctx): void {
 function bookcase(ctx: Ctx): void {
   const b = ctx.L.solid;
   box(b, 2.45, -2.7, 1.1, 0.6, 0, 2.4, 0xa8744a, { density: 50 });
-  panel(b, 'z', [2.45, 1.2, -2.395], 0.95, 2.3, 0xffe0c8, { density: 70 });
+  panel(b, 'z', [2.45, 1.2, -2.35], 0.95, 2.3, 0xffe0c8, { density: 70, depthBias: 0.06 });
   for (const y of [0.86, 1.56, 2.26]) box(b, 2.45, -2.62, 1.0, 0.45, y, 0.06, 0xe8a77a, { density: 100, edge: 0.4 });
   ['#d9553f', '#4cc3d9', '#ffd85a', '#7ed07a', '#b9a7ff', '#ff8a6b'].forEach((_, i) => {
     const cols = [0xd9553f, 0x4cc3d9, 0xffd85a, 0x7ed07a, 0xb9a7ff, 0xff8a6b];

@@ -1,14 +1,5 @@
 import type { Lang } from '../i18n';
-
-export interface ShareCardAxis {
-  leftCode: string;
-  rightCode: string;
-  leftLabel: string;
-  rightLabel: string;
-  leftPct: number;
-  rightPct: number;
-  winner: string;
-}
+import { QUALITIES, type Quality } from '../world3d/qualities';
 
 export interface ShareCardText {
   title: string;
@@ -19,11 +10,12 @@ export interface ShareCardText {
   netWorth: string;
   goal: string;
   footer: string;
-  mbtiCode?: string;
-  mbtiTitle?: string;
+  archetypeName?: string;
+  areaScore?: string;
   rarity?: string;
   grade?: string;
-  axes?: ShareCardAxis[];
+  hexValues?: Record<Quality, number>;
+  hexLabels?: Record<Quality, string>;
   barcodeDigits?: string;
 }
 
@@ -33,18 +25,16 @@ const PAD = CARD.x + 56;
 const C = {
   sky: ['#8fd3ff', '#9ad8ff', '#a6ddff', '#b3e2ff', '#bfe7ff', '#cdeeff'], cloud: '#fffaf0', hill: '#7ed07a', hillDeep: '#4fa857',
   paper: '#fffaf0', cream: '#fff6dc', ink: '#2b3a55', text: '#1f2a44', muted: '#566683', stamp: '#d94a32', marker: '#ffe58a',
-  sun: '#ffd85a', green: '#7ed07a', turquoise: '#4cc3d9', coral: '#ff8a6b', lilac: '#b9a7ff', skyChip: '#8fd3ff', line: '#b3c7dc',
+  sun: '#ffd85a', green: '#7ed07a', turquoise: '#4cc3d9', grid: '#a9cfe0', coral: '#ff8a6b', lilac: '#b9a7ff', line: '#b3c7dc',
   shadow: 'rgba(43,58,85,0.25)', track: '#e9f1f8',
 };
-const POLE_COLORS: Readonly<Record<string, string>> = {
-  S: C.green,
-  E: C.sun,
-  G: C.turquoise,
-  V: C.coral,
-  I: C.skyChip,
-  K: C.lilac,
-  P: '#a8e4a0',
-  A: '#ffb59f',
+const QUALITY_COLORS: Readonly<Record<Quality, string>> = {
+  wealth: C.sun,
+  safety: C.turquoise,
+  joy: C.coral,
+  bonds: C.lilac,
+  freedom: '#8fd3ff',
+  growth: C.green,
 };
 const FONT = '"PingFang HK", "Noto Sans HK", "Microsoft JhengHei", system-ui, sans-serif';
 const MONO = 'ui-monospace, "SF Mono", Menlo, Consolas, monospace';
@@ -86,14 +76,13 @@ function paperCard(ctx: CanvasRenderingContext2D) {
   ctx.fillStyle = C.shadow;
   ctx.fillRect(x + 3 * U, y + 3 * U, w, h);
   frame(ctx, x, y, w, h, C.paper);
-  // perforated top edge: square bites in pixel steps
   ctx.fillStyle = C.ink;
   for (let px = x + U; px < x + w - 2 * U; px += 4 * U) ctx.fillRect(px, y + 2 * U, 2 * U, 2 * U);
 }
 
 function stampBox(ctx: CanvasRenderingContext2D, label: string, compact = false) {
   ctx.save();
-  ctx.translate(CARD.x + CARD.w - 210, compact ? 236 : 262);
+  ctx.translate(CARD.x + CARD.w - 205, compact ? 236 : 262);
   ctx.rotate(-0.12);
   ctx.font = `800 ${compact ? 36 : 46}px ${FONT}`;
   const sw = Math.min(310, ctx.measureText(label).width + 52);
@@ -113,78 +102,145 @@ function drawDashedRule(ctx: CanvasRenderingContext2D, y: number) {
   for (let x = PAD; x < W - PAD; x += 36) ctx.fillRect(x, y, 22, 6);
 }
 
-function drawMiniAxes(ctx: CanvasRenderingContext2D, axes: ShareCardAxis[], startY: number): number {
-  const contentW = W - 2 * PAD;
-  const colGap = 28;
-  const colW = (contentW - colGap) / 2;
-  const rowH = 74;
-  axes.slice(0, 4).forEach((ax, idx) => {
-    const col = idx % 2;
-    const row = Math.floor(idx / 2);
-    const x = PAD + col * (colW + colGap);
-    const y = startY + row * rowH;
-    const leftWins = ax.winner === ax.leftCode;
-    const winPct = leftWins ? ax.leftPct : ax.rightPct;
+function drawShareHexagon(
+  ctx: CanvasRenderingContext2D,
+  values: Record<Quality, number>,
+  labels: Record<Quality, string> | undefined,
+  cx: number,
+  cy: number,
+  maxR: number,
+) {
+  const step = (Math.PI * 2) / QUALITIES.length;
+  const start = -Math.PI / 2;
+  const pt = (i: number, r: number): [number, number] => [cx + Math.cos(start + i * step) * r, cy + Math.sin(start + i * step) * r];
 
-    ctx.font = `800 24px ${FONT}`;
-    ctx.fillStyle = leftWins ? C.ink : C.muted;
-    ctx.textAlign = 'left';
-    ctx.fillText(`${ax.leftCode} ${ax.leftLabel}`, x, y + 24, colW * 0.48);
-
-    ctx.fillStyle = !leftWins ? C.ink : C.muted;
-    ctx.textAlign = 'right';
-    ctx.fillText(`${ax.rightLabel} ${ax.rightCode}`, x + colW, y + 24, colW * 0.48);
-
-    ctx.font = `900 22px ${MONO}`;
-    ctx.fillStyle = C.ink;
-    ctx.textAlign = 'center';
-    ctx.fillText(`${winPct}%`, x + colW / 2, y + 24);
-    ctx.textAlign = 'left';
-
-    const barY = y + 36;
-    const barH = 22;
-    frame(ctx, x + 4, barY, colW - 8, barH, C.track, C.ink, 4);
-    const innerW = colW - 12;
-    const fillW = Math.max(12, Math.round((innerW * winPct) / 100));
-    ctx.fillStyle = POLE_COLORS[ax.winner] ?? C.turquoise;
-    if (leftWins) ctx.fillRect(x + 6, barY + 2, fillW, barH - 4);
-    else ctx.fillRect(x + colW - 6 - fillW, barY + 2, fillW, barH - 4);
-
-    // center 50% tick
-    ctx.fillStyle = 'rgba(43,58,85,0.45)';
-    ctx.fillRect(x + Math.round(colW / 2) - 2, barY, 4, barH);
+  // Concentric hex rings
+  ctx.strokeStyle = C.grid;
+  ctx.lineWidth = 3;
+  for (const f of [1 / 3, 2 / 3, 1]) {
+    ctx.beginPath();
+    QUALITIES.forEach((_, i) => {
+      const [x, y] = pt(i, maxR * f);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.closePath();
+    ctx.stroke();
+  }
+  // Spokes
+  QUALITIES.forEach((_, i) => {
+    const [x, y] = pt(i, maxR);
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(x, y);
+    ctx.stroke();
   });
-  return startY + Math.ceil(Math.min(4, axes.length) / 2) * rowH;
+
+  // Filled life shape
+  const pts = QUALITIES.map((q, i) => pt(i, (maxR * Math.max(0, Math.min(100, values[q]))) / 100));
+  ctx.beginPath();
+  pts.forEach(([x, y], i) => {
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(76, 195, 217, 0.72)';
+  ctx.fill();
+  ctx.strokeStyle = C.ink;
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  // Golden square pixel vertices
+  pts.forEach(([x, y]) => {
+    ctx.fillStyle = C.ink;
+    ctx.fillRect(Math.round(x - 8), Math.round(y - 8), 16, 16);
+    ctx.fillStyle = C.sun;
+    ctx.fillRect(Math.round(x - 5), Math.round(y - 5), 10, 10);
+  });
+
+  // Axis labels + numeric scores
+  QUALITIES.forEach((q, i) => {
+    const [vx, vy] = pt(i, maxR + 26);
+    const score = Math.round(values[q]);
+    const name = labels?.[q] ?? q;
+    ctx.font = `800 22px ${FONT}`;
+    ctx.fillStyle = C.text;
+    if (Math.abs(vx - cx) < 10) {
+      ctx.textAlign = 'center';
+      const base = vy < cy ? vy - 18 : vy + 18;
+      ctx.fillText(`${name} ${score}`, vx, base);
+    } else if (vx > cx) {
+      ctx.textAlign = 'left';
+      ctx.fillText(name, vx, vy - 2);
+      ctx.font = `900 22px ${MONO}`;
+      ctx.fillText(String(score), vx, vy + 24);
+    } else {
+      ctx.textAlign = 'right';
+      ctx.fillText(name, vx, vy - 2);
+      ctx.font = `900 22px ${MONO}`;
+      ctx.fillText(String(score), vx, vy + 24);
+    }
+  });
+  ctx.textAlign = 'left';
 }
 
-function drawReceiptBarcode(ctx: CanvasRenderingContext2D, digits: string, code: string | undefined, y: number) {
+function drawMiniQualityBars(
+  ctx: CanvasRenderingContext2D,
+  values: Record<Quality, number>,
+  labels: Record<Quality, string> | undefined,
+  x: number,
+  y: number,
+  w: number,
+) {
+  const rowH = 56;
+  QUALITIES.forEach((q, idx) => {
+    const ry = y + idx * rowH;
+    const val = Math.round(Math.max(0, Math.min(100, values[q])));
+    const name = labels?.[q] ?? q;
+    ctx.font = `800 22px ${FONT}`;
+    ctx.fillStyle = C.text;
+    ctx.textAlign = 'left';
+    ctx.fillText(name, x, ry + 20);
+    ctx.font = `900 22px ${MONO}`;
+    ctx.textAlign = 'right';
+    ctx.fillText(String(val), x + w, ry + 20);
+    ctx.textAlign = 'left';
+
+    const barY = ry + 28;
+    const barH = 16;
+    frame(ctx, x + 3, barY, w - 6, barH, C.track, C.ink, 3);
+    const fillW = Math.max(8, Math.round(((w - 10) * val) / 100));
+    ctx.fillStyle = QUALITY_COLORS[q];
+    ctx.fillRect(x + 5, barY + 2, fillW, barH - 4);
+  });
+}
+
+function drawReceiptBarcode(ctx: CanvasRenderingContext2D, digits: string, footerTag: string, y: number) {
   const barW = 540;
   const startX = Math.round((W - barW) / 2);
   let cursor = startX;
   ctx.fillStyle = C.ink;
-  // left guard
-  ctx.fillRect(cursor, y, 6, 46); cursor += 12;
-  ctx.fillRect(cursor, y, 6, 46); cursor += 14;
-  for (let i = 0; i < digits.length; i++) {
+  ctx.fillRect(cursor, y, 6, 44); cursor += 12;
+  ctx.fillRect(cursor, y, 6, 44); cursor += 14;
+  for (let i = 0; i < digits.length; i += 1) {
     const d = digits.charCodeAt(i) - 48;
     const w1 = 4 + (d % 3) * 3;
     const g1 = 4 + ((d >> 1) % 2) * 3;
     const w2 = 4 + ((d + i) % 2) * 3;
     const g2 = 6 + ((d >> 2) % 2) * 3;
-    if (cursor + w1 < startX + barW - 30) ctx.fillRect(cursor, y, w1, 42);
+    if (cursor + w1 < startX + barW - 30) ctx.fillRect(cursor, y, w1, 40);
     cursor += w1 + g1;
-    if (cursor + w2 < startX + barW - 30) ctx.fillRect(cursor, y, w2, 42);
+    if (cursor + w2 < startX + barW - 30) ctx.fillRect(cursor, y, w2, 40);
     cursor += w2 + g2;
   }
-  // right guard
-  ctx.fillRect(startX + barW - 22, y, 6, 46);
-  ctx.fillRect(startX + barW - 10, y, 6, 46);
+  ctx.fillRect(startX + barW - 22, y, 6, 44);
+  ctx.fillRect(startX + barW - 10, y, 6, 44);
 
   const formatted = digits.replace(/(\d{4})(?=\d)/g, '$1-');
   ctx.font = `700 22px ${MONO}`;
   ctx.fillStyle = C.muted;
   ctx.textAlign = 'center';
-  ctx.fillText(`RCPT ${formatted}${code ? ` · ${code}` : ''}`, W / 2, y + 72);
+  ctx.fillText(`RCPT ${formatted} · ${footerTag}`, W / 2, y + 70);
   ctx.textAlign = 'left';
 }
 
@@ -199,11 +255,10 @@ export function drawShareCard(t: ShareCardText, lang: Lang): Promise<Blob> {
   backdrop(ctx);
   paperCard(ctx);
 
-  const hasMbti = Boolean(t.mbtiCode);
+  const hasHex = Boolean(t.hexValues);
   const contentW = W - 2 * PAD;
 
-  if (!hasMbti) {
-    // Classic layout preserved for callers without MBTI fields
+  if (!hasHex) {
     let y = 250;
     const text = (s: string, size: number, color = C.text, weight = 400) => {
       ctx.font = `${weight} ${size}px ${FONT}`;
@@ -236,121 +291,101 @@ export function drawShareCard(t: ShareCardText, lang: Lang): Promise<Blob> {
     return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Could not make the image'))), 'image/png'));
   }
 
-  // Enhanced MBTI Thermal Receipt layout
-  let y = 212;
-  ctx.font = `800 54px ${FONT}`;
+  // Enhanced Life Hexagon Receipt layout
+  let y = 200;
+  ctx.font = `800 50px ${FONT}`;
   ctx.fillStyle = C.text;
   ctx.fillText(t.title, PAD, y, contentW - 300);
   y += 46;
 
-  // Ages + Rarity + Grade pills
-  ctx.font = `600 28px ${FONT}`;
+  // Ages + Area + Rarity + Grade pills
+  ctx.font = `600 25px ${FONT}`;
   ctx.fillStyle = C.muted;
   ctx.fillText(t.ages, PAD, y);
-  let chipX = PAD + ctx.measureText(t.ages).width + 24;
-  if (t.rarity) {
-    ctx.font = `800 24px ${MONO}`;
-    const rw = ctx.measureText(t.rarity).width + 28;
-    frame(ctx, chipX, y - 26, rw, 36, C.sun, C.ink, 4);
-    ctx.fillStyle = C.ink;
-    ctx.fillText(t.rarity, chipX + 14, y - 1);
-    chipX += rw + 18;
-  }
-  if (t.grade) {
-    ctx.font = `800 24px ${MONO}`;
-    const gw = ctx.measureText(t.grade).width + 28;
-    if (chipX + gw < CARD.x + CARD.w - 340) {
-      frame(ctx, chipX, y - 26, gw, 36, C.turquoise, C.ink, 4);
+  let chipX = PAD + ctx.measureText(t.ages).width + 16;
+  for (const [label, bg] of [
+    [t.areaScore, C.sun],
+    [t.rarity, C.cream],
+    [t.grade, C.turquoise],
+  ] as const) {
+    if (!label) continue;
+    ctx.font = `800 20px ${MONO}`;
+    const pw = ctx.measureText(label).width + 20;
+    if (chipX + pw < CARD.x + CARD.w - 315) {
+      frame(ctx, chipX, y - 22, pw, 32, bg, C.ink, 4);
       ctx.fillStyle = C.ink;
-      ctx.fillText(t.grade, chipX + 14, y - 1);
+      ctx.fillText(label, chipX + 10, y - 1);
+      chipX += pw + 12;
     }
   }
 
-  // MBTI 4-letter pixel plate + Archetype Title
-  y = 304;
-  const code = t.mbtiCode!;
-  const tileSize = 72;
-  const tileGap = 14;
-  [...code].forEach((ch, idx) => {
-    const tx = PAD + idx * (tileSize + tileGap);
-    frame(ctx, tx, y, tileSize, tileSize, POLE_COLORS[ch] ?? C.sun, C.ink, 5);
-    ctx.font = `900 46px ${MONO}`;
-    ctx.fillStyle = C.ink;
-    ctx.textAlign = 'center';
-    ctx.fillText(ch, tx + tileSize / 2, y + 52);
-  });
-  ctx.textAlign = 'left';
-
-  if (t.mbtiTitle) {
-    const titleX = PAD + 4 * (tileSize + tileGap) + 14;
-    const maxTitleW = W - PAD - titleX;
-    ctx.font = `900 42px ${FONT}`;
+  // Archetype Name + Behaviour Label
+  y = 322;
+  if (t.archetypeName) {
+    ctx.font = `900 44px ${FONT}`;
     ctx.fillStyle = C.text;
-    ctx.fillText(t.mbtiTitle, titleX, y + 50, maxTitleW);
+    ctx.fillText(t.archetypeName, PAD, y, contentW - 260);
+    y += 58;
   }
 
-  // Behaviour label plate
-  y += 108;
-  ctx.font = `900 56px ${FONT}`;
-  const lw = Math.min(contentW, ctx.measureText(t.label).width + 52);
-  frame(ctx, PAD, y, lw, 84, C.sun, C.ink, 6);
+  ctx.font = `900 48px ${FONT}`;
+  const lw = Math.min(contentW, ctx.measureText(t.label).width + 48);
+  frame(ctx, PAD, y - 42, lw, 68, C.sun, C.ink, 5);
   ctx.fillStyle = C.text;
-  ctx.fillText(t.label, PAD + 26, y + 60, lw - 40);
-  y += 126;
+  ctx.fillText(t.label, PAD + 24, y + 7, lw - 36);
+  y += 62;
 
   // Description (capped neatly to 2 lines)
-  ctx.font = `500 32px ${FONT}`;
-  ctx.fillStyle = C.text;
-  const descLines = wrap(ctx, t.desc, contentW, lang).slice(0, 2);
-  for (const line of descLines) {
+  ctx.font = `500 27px ${FONT}`;
+  ctx.fillStyle = C.muted;
+  for (const line of wrap(ctx, t.desc, contentW, lang).slice(0, 2)) {
     ctx.fillText(line, PAD, y);
-    y += 44;
+    y += 36;
   }
 
-  y += 12;
+  y += 6;
   drawDashedRule(ctx, y);
-  y += 58;
+  y += 24;
+
+  // Centerpiece: Left Hexagon Radar + Right 6-Dimension Bars
+  const hexPanelW = 430;
+  const hexPanelH = 340;
+  frame(ctx, PAD, y, hexPanelW, hexPanelH, C.cream, C.ink, 5);
+  drawShareHexagon(ctx, t.hexValues!, t.hexLabels, PAD + hexPanelW / 2, y + hexPanelH / 2 + 4, 102);
+
+  const rightX = PAD + hexPanelW + 32;
+  const rightW = W - PAD - rightX;
+  drawMiniQualityBars(ctx, t.hexValues!, t.hexLabels, rightX, y + 6, rightW);
+
+  y += hexPanelH + 50;
 
   // Net worth row
-  ctx.font = `700 36px ${FONT}`;
+  ctx.font = `700 34px ${FONT}`;
   ctx.fillStyle = C.text;
   ctx.fillText(t.netWorthLabel, PAD, y);
   ctx.textAlign = 'right';
-  ctx.font = `900 52px ${MONO}`;
+  ctx.font = `900 46px ${MONO}`;
   ctx.fillText(t.netWorth, W - PAD, y);
   ctx.textAlign = 'left';
-  y += 30;
+  y += 24;
 
-  // 4 mini spectrum bars
-  if (t.axes && t.axes.length > 0) {
-    y = drawMiniAxes(ctx, t.axes, y);
-    y += 18;
-  } else {
-    y += 24;
-  }
-
-  // Goal verdict highlighter box
-  ctx.font = `500 32px ${FONT}`;
-  const goalLines = wrap(ctx, t.goal, contentW - 44, lang).slice(0, 3);
-  const goalBoxH = goalLines.length * 44 + 34;
-  frame(ctx, PAD, y, contentW, goalBoxH, C.marker, C.ink, 6);
+  // Goal box
+  ctx.font = `400 32px ${FONT}`;
+  const goalLines = wrap(ctx, t.goal, contentW - 44, lang).slice(0, 2);
+  const goalH = Math.max(82, goalLines.length * 44 + 30);
+  frame(ctx, PAD, y, contentW, goalH, C.marker, C.ink, 5);
   ctx.fillStyle = C.text;
-  goalLines.forEach((l, i) => ctx.fillText(l, PAD + 22, y + 48 + i * 44));
+  goalLines.forEach((l, i) => ctx.fillText(l, PAD + 22, y + 50 + i * 44));
 
-  // Stamp top-right
   stampBox(ctx, t.label, true);
 
-  // Barcode + Footer pinned cleanly to the bottom of the thermal card
-  const footerY = CARD.y + CARD.h - 26;
   if (t.barcodeDigits) {
-    const barcodeY = Math.max(y + goalBoxH + 22, footerY - 110);
-    if (barcodeY + 72 < footerY) {
-      drawReceiptBarcode(ctx, t.barcodeDigits, t.mbtiCode, barcodeY);
-    }
+    drawReceiptBarcode(ctx, t.barcodeDigits, t.areaScore ?? 'HEX', CARD.y + CARD.h - 142);
   }
-  ctx.font = `400 24px ${FONT}`;
+
+  ctx.font = `500 24px ${FONT}`;
   ctx.fillStyle = C.muted;
-  ctx.fillText(t.footer, PAD, footerY, contentW);
+  ctx.fillText(t.footer, PAD, CARD.y + CARD.h - 28, contentW);
 
   return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Could not make the image'))), 'image/png'));
 }

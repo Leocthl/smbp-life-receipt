@@ -16,16 +16,19 @@ import { buildWeather, RAIN_PERIOD } from './weather';
 import { bedroom, floorAndWalls, roomColliders, roomMood, windowAt, ROOM } from './room';
 import { FLAT_X1, flatPeople, flatWalls, livingRoom } from './flat';
 import { buildMementos } from './mementos';
+import { buildLivingNpcs } from './livingNpc';
+import { buildTraffic } from './traffic';
+import { buildStreetDetail } from './streetDetail';
 
 // A growing diorama: the bedroom, then the family flat, then the block, the district and the whole harbour.
 // Every visible fact comes from the WorldDescriptor; every decision leaves a keepsake.
 
 const FRAMING: Record<Scope, Framing> = {
-  room: { viewHeight: 8.5, target: [0, 1.2, 0], yaw: Math.PI / 4 },
-  home: { viewHeight: 14.5, target: [3.6, 1.1, 0], yaw: Math.PI / 4 },
-  block: { viewHeight: 23, target: [-1, 3, -7], yaw: Math.PI / 4 },
-  district: { viewHeight: 32, target: [0, 3, -1], yaw: Math.PI / 4 },
-  city: { viewHeight: 40, target: [0, 4, 0], yaw: Math.PI / 4 },
+  room: { viewHeight: 8.2, target: [0, 1.2, 0], yaw: Math.PI / 4, pitch: 0.64 },
+  home: { viewHeight: 14.0, target: [3.6, 1.1, 0], yaw: Math.PI / 4, pitch: 0.61 },
+  block: { viewHeight: 22.5, target: [-1, 3, -7], yaw: Math.PI / 4, pitch: 0.56 },
+  district: { viewHeight: 31, target: [0, 3, -1], yaw: Math.PI / 4, pitch: 0.51 },
+  city: { viewHeight: 38, target: [0, 3.8, 0], yaw: Math.PI / 4, pitch: 0.46 },
 };
 
 /** How the camera should frame a scope: close on the bedroom, wide on the harbour. */
@@ -80,17 +83,19 @@ export const buildWorld: BuildWorld = (d, seed) => {
     applyLook(ctx, m, kind);
     built.set(key, m);
   }
-  const meshes = [...built.values()];
+  const living = [buildLivingNpcs(ctx), buildTraffic(ctx), buildStreetDetail(ctx)];
+  const meshes = [...built.values(), ...living.flatMap((h) => h.meshes)];
   const group = new THREE.Group();
   group.name = 'world';
-  meshes.forEach((m) => group.add(m.mesh));
+  built.forEach((m) => group.add(m.mesh));
+  living.forEach((h) => group.add(h.group));
   const { solid, glow, tram, boats, rain } = { solid: built.get('solid'), glow: built.get('glow'), tram: built.get('tram'), boats: built.get('boats'), rain: built.get('rain') };
   const fresh = [built.get('fresh'), built.get('freshGlow')].filter((m): m is GaussianMesh => m !== undefined);
   const baseGlow = glow?.uniforms.uGlow.value ?? 0;
   return {
     group, meshes, fresh, spots: ctx.spots, colliders: ctx.colliders, framing: framingFor(ctx.scope),
     bounds: ctx.scope === 'room' ? 2.7 : ctx.scope === 'home' ? 10 : BOUNDS, sky: ctx.tone.sky,
-    update(t) {
+    update(t, dt, heroPos) {
       if (glow) glow.uniforms.uGlow.value = baseGlow + Math.sin(t * 2.2) * 0.04;
       if (d.regime === 'crash' && solid) solid.uniforms.uGlow.value = Math.max(0, 0.9 - ((t * 1.0) % 9) * 6) * 0.35;
       if (rain) rain.mesh.position.y = -((t * 11) % RAIN_PERIOD);
@@ -100,7 +105,11 @@ export const buildWorld: BuildWorld = (d, seed) => {
         tram.mesh.visible = Math.abs(tx) < 14.5; // leaves the picture past the street's ends (a fade would blend overlapping panels)
       }
       if (boats) boats.mesh.position.set(Math.sin(t * 0.2) * 0.7, Math.sin(t * 1.3) * 0.05, 0);
+      living.forEach((h) => h.update(t, dt, heroPos));
     },
-    dispose() { meshes.forEach((m) => m.dispose()); },
+    dispose() {
+      built.forEach((m) => m.dispose());
+      living.forEach((h) => h.dispose());
+    },
   };
 };

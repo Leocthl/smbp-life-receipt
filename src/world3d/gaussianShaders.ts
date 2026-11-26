@@ -90,7 +90,9 @@ void main() {
   int flags = int(t2.w + 0.5);
   float bias = 0.0;
   if ((flags & 8) != 0) bias = ortho ? 0.3 * abs(projectionMatrix[2][2]) : -0.0008 * clip.w; // detail sits just in front of its surface
-  if (ortho) bias += uBias * abs(projectionMatrix[2][2]);
+  float splatBias = t4.w + mod(aIndex, 64.0) * 0.00008;
+  if (ortho) bias += (uBias + splatBias) * abs(projectionMatrix[2][2]);
+  else bias -= (splatBias * 0.002) * clip.w;
   gl_Position = clip + vec4(offset / uViewport * 2.0 * clip.w, ortho ? -bias : bias, 0.0);
   vPos = position.xy * k;
   // position of this fragment relative to the splat centre, in the mesh's own space (for the smooth blob normal)

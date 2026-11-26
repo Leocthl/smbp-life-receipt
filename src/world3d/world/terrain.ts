@@ -31,11 +31,11 @@ function land(ctx: Ctx): void {
 
 function street(ctx: Ctx): void {
   const s = ctx.L.solid, z = ROAD.tramZ;
-  panel(s, 'y', [0, 0.02, z], 28, 1.3, 0x9aa8c4, { density: 24, thick: 0.01 });
-  for (const dz of [-0.3, 0.3]) line(s, [-14, 0.05, z + dz], [14, 0.05, z + dz], 0xc9d3e6, 0.04, 0.06);
-  for (let x = -13.5; x < 14; x += 0.7) panel(s, 'y', [x, 0.03, z], 0.12, 1.1, 0x2b3a55, { density: 60, thick: 0.01 });
-  for (let i = 0; i < 6; i += 1) panel(s, 'y', [2.2, 0.03, ROAD.z0 + 0.35 + i * 0.64], 0.9, 0.3, 0xfff6dc, { density: 60, thick: 0.01 });
-  for (let x = -13; x < 14; x += 1.6) panel(s, 'y', [x, 0.03, -6.2 + 0.0], 0.7, 0.07, 0xfff6dc, { density: 80, thick: 0.01, opacity: 0.6 });
+  panel(s, 'y', [0, 0.04, z], 28, 1.3, 0x9aa8c4, { density: 24, thick: 0.01, depthBias: 0.05 });
+  for (const dz of [-0.3, 0.3]) line(s, [-14, 0.08, z + dz], [14, 0.08, z + dz], 0xc9d3e6, 0.04, 0.06);
+  for (let x = -13.5; x < 14; x += 0.7) panel(s, 'y', [x, 0.06, z], 0.12, 1.1, 0x2b3a55, { density: 60, thick: 0.01, depthBias: 0.09 });
+  for (let i = 0; i < 6; i += 1) panel(s, 'y', [2.2, 0.06, ROAD.z0 + 0.35 + i * 0.64], 0.9, 0.3, 0xfff6dc, { density: 60, thick: 0.01, depthBias: 0.09 });
+  for (let x = -13; x < 14; x += 1.6) panel(s, 'y', [x, 0.06, -6.2 + 0.0], 0.7, 0.07, 0xfff6dc, { density: 80, thick: 0.01, opacity: 0.6, depthBias: 0.09 });
   // overhead tram wire
   line(s, [-14, 4.6, z], [14, 4.6, z], 0x9aa8c4, 0.03, 0.12, 1);
   for (const x of [-12, -3, 6, 13]) line(s, [x, 0, -2.5], [x, 4.6, -2.5], 0x6b789c, 0.07, 0.08);
@@ -75,7 +75,7 @@ function sea(ctx: Ctx): void {
     sheet(xl, xr, z0, zf + d0, a);
   });
   // a few long, gentle highlight rows
-  for (let r = 0; r < 6; r += 1) for (let x = -SEA_HALF_X + ((r * 5) % 7); x < SEA_HALF_X - 2; x += 5.5) panel(water, 'y', [x, -0.26, z0 + 1.6 + r * 2], 1.5 + (r % 3) * 0.4, 0.14, foam, { density: 40, thick: 0.01, fx: true });
+  for (let r = 0; r < 6; r += 1) for (let x = -SEA_HALF_X + ((r * 5) % 7); x < SEA_HALF_X - 2; x += 5.5) panel(water, 'y', [x, -0.22, z0 + 1.6 + r * 2], 1.5 + (r % 3) * 0.4, 0.14, foam, { density: 40, thick: 0.01, fx: true, depthBias: 0.06 });
 }
 
 function pier(ctx: Ctx): void {
@@ -137,12 +137,12 @@ function loopMarkers(ctx: Ctx): void {
   const s = ctx.L.solid, e = ctx.ext;
   const zMax = Math.min(8.8, e.z1 - 0.4);
   for (let x = -12; x <= 12; x += 3) {
-    panel(s, 'y', [x, 0.035, -13.1], 0.45, 0.18, 0xffd85a, { density: 40, thick: 0.01 });
-    if (zMax > 2) panel(s, 'y', [x, 0.035, zMax], 0.45, 0.18, 0x4cc3d9, { density: 40, thick: 0.01 });
+    panel(s, 'y', [x, 0.055, -13.1], 0.45, 0.18, 0xffd85a, { density: 40, thick: 0.01, depthBias: 0.08 });
+    if (zMax > 2) panel(s, 'y', [x, 0.055, zMax], 0.45, 0.18, 0x4cc3d9, { density: 40, thick: 0.01, depthBias: 0.08 });
   }
   for (let z = -12; z <= Math.floor(zMax); z += 3) {
-    panel(s, 'y', [-13.1, 0.035, z], 0.18, 0.45, 0xffd85a, { density: 40, thick: 0.01 });
-    panel(s, 'y', [13.1, 0.035, z], 0.18, 0.45, 0xffd85a, { density: 40, thick: 0.01 });
+    panel(s, 'y', [-13.1, 0.055, z], 0.18, 0.45, 0xffd85a, { density: 40, thick: 0.01, depthBias: 0.08 });
+    panel(s, 'y', [13.1, 0.055, z], 0.18, 0.45, 0xffd85a, { density: 40, thick: 0.01, depthBias: 0.08 });
   }
 }
 

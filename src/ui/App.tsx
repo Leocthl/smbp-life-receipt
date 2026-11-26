@@ -1,8 +1,9 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Lang } from '../i18n';
-import type { StageApi } from '../world3d/contracts';
+import type { ReactionKind, SpotId, StageApi } from '../world3d/contracts';
 import { isLoopingScope } from '../world3d/controls';
 import { scopeFor } from '../world3d/descriptor';
+import { generateYearOpportunities, type CityPin } from '../engine/cityHub';
 import { generateDynamicEvent, type DynamicEvent, type DynamicResult } from '../engine/procedural';
 import type { FreeActionOption, FreeActionResult, FreeSpotKey } from '../engine/freeChoice';
 import { resolveWithMini } from './director/choice';
@@ -79,8 +80,13 @@ export function App() {
   const [activeSpot, setActiveSpot] = useState<FreeSpotKey | null>(null);
   const [freeResult, setFreeResult] = useState<FreeActionResult | null>(null);
   const [bonusDyn, setBonusDyn] = useState<{ event: DynamicEvent; result: DynamicResult | null } | null>(null);
+  const [visitedSpots, setVisitedSpots] = useState<SpotId[]>([]);
   const [unlockToast, setUnlockToast] = useState(false);
   const prevScopeRef = useRef<string | null>(null);
+  const pinWalkTokenRef = useRef(0);
+  const bonusSpotRef = useRef<SpotId | null>(null);
+  const sessionRef = useRef<Session | null>(session);
+  sessionRef.current = session;
   const i18n = useMemo(() => makeI18n(lang), [lang]);
   // ?debug=1 lets e2e/camera.mjs read the camera; it is a no-op otherwise
   useEffect(() => { if (params.get('debug') === '1') (window as unknown as { __mlStage?: StageApi | null }).__mlStage = stage; }, [stage]);
@@ -106,6 +112,23 @@ export function App() {
       isLoopingScope(scope) &&
       (screen.kind === 'card' || screen.kind === 'dynamic' || screen.kind === 'summary'),
   );
+
+  // Reset visited spots each new turn so fresh yearly pins regenerate cleanly.
+  const turn = session?.state.turn ?? -1;
+  useEffect(() => {
+    setVisitedSpots([]);
+    bonusSpotRef.current = null;
+  }, [turn]);
+
+  const cityPins = useMemo<CityPin[]>(
+    () => (session && isLoopingScope(scope) ? generateYearOpportunities(session.state, scope, visitedSpots, session.dynNonce) : []),
+    [session, scope, visitedSpots],
+  );
+  const unvisitedPinCount = useMemo(() => cityPins.filter((p) => !p.visited).length, [cityPins]);
+
+  useEffect(() => {
+    stage?.setCityPins(canExplore && !activeSpot && !bonusDyn ? cityPins : []);
+  }, [stage, canExplore, activeSpot, bonusDyn, cityPins]);
 
   // Exit free roam automatically if the story moves to a non-explorable phase or asks for a walk
   useEffect(() => {
@@ -150,7 +173,35 @@ export function App() {
       setActiveSpot(spot.id);
       setFreeResult(null);
     });
-    return () => stage.onSpotEnter(null);
+    stage.onPinSelect((pin) => {
+      const token = ++pinWalkTokenRef.current;
+      bonusSpotRef.current = null;
+      setFreeRoam(true);
+      setActiveSpot(null);
+      setFreeResult(null);
+      setBonusDyn(null);
+      void stage
+        .walkTo(pin.spot)
+        .then(() => {
+          if (pinWalkTokenRef.current !== token) return;
+          const cur = sessionRef.current;
+          if (!cur) return;
+          if (pin.kind === 'encounter' && cur.freeActionsLeft > 0) {
+            bonusSpotRef.current = pin.spot;
+            setBonusDyn({ event: generateDynamicEvent(cur.state, cur.dynNonce + 101), result: null });
+            return;
+          }
+          setActiveSpot(pin.spot);
+          setFreeResult(null);
+        })
+        .catch(() => {
+          // walk superseded or cancelled
+        });
+    });
+    return () => {
+      stage.onSpotEnter(null);
+      stage.onPinSelect(null);
+    };
   }, [stage]);
 
   useEffect(() => {
@@ -188,11 +239,21 @@ export function App() {
     if (!stageRef.current?.contains(document.activeElement)) stageRef.current?.focus({ preventScroll: true });
   }, [slipKey, away]);
 
+  const reactToDelta = (cashDelta: number, happyDelta: number) => {
+    if (!stage) return;
+    let kind: ReactionKind | null = null;
+    if (cashDelta >= 1_000 && happyDelta >= 0) kind = 'cash';
+    else if (happyDelta > 0 || cashDelta > 0) kind = 'happy';
+    else if (happyDelta < 0 || cashDelta <= -4_000) kind = 'worry';
+    if (kind) stage.react(kind);
+  };
+
   const toggleLang = () => setLang(lang === 'zh' ? 'en' : 'zh');
   const onChoose = (id: string) => {
     if (!session) return;
     haptic(10);
     const { next, mini: game } = resolveWithMini(session, id, minisOn && !fasting);
+    reactToDelta(next.state.cash - session.state.cash, next.state.happiness - session.state.happiness);
     if (game) setMini({ id: game, next });
     else setSession(next);
   };
@@ -208,6 +269,9 @@ export function App() {
     setFreeResult(null);
     setBonusDyn({ event: generateDynamicEvent(session.state, session.dynNonce + 101), result: null });
   };
+  const markVisited = (spot: SpotId) => {
+    setVisitedSpots((prev) => (prev.includes(spot) ? prev : [...prev, spot]));
+  };
   const onPickFree = (option: FreeActionOption, customAmount?: number) => {
     if (!session) return;
     haptic(10);
@@ -218,6 +282,8 @@ export function App() {
     const { session: nextSession, result } = applySessionFreeAction(session, option, customAmount);
     setSession(nextSession);
     setFreeResult(result);
+    reactToDelta(result.delta.cash, result.delta.happiness);
+    if (option.spot !== 'mystery') markVisited(option.spot);
   };
   const onChooseBonusDyn = (choiceId: string) => {
     if (!session || !bonusDyn) return;
@@ -225,6 +291,11 @@ export function App() {
     const { session: nextSession, result } = applySessionBonusDynamic(session, bonusDyn.event, choiceId);
     setSession(nextSession);
     setBonusDyn({ event: bonusDyn.event, result });
+    reactToDelta(result.delta.cash, result.delta.happiness);
+    if (bonusSpotRef.current) {
+      markVisited(bonusSpotRef.current);
+      bonusSpotRef.current = null;
+    }
   };
 
   return (
@@ -240,7 +311,7 @@ export function App() {
           data-testid="explore-btn"
           onClick={() => { setFreeRoam(true); setActiveSpot(null); setFreeResult(null); setBonusDyn(null); }}
         >
-          {i18n.t('world.explore')}
+          {unvisitedPinCount > 0 ? i18n.t('hub.openCity', { n: unvisitedPinCount }) : i18n.t('world.explore')}
         </button>
       )}
       {freeRoam && !activeSpot && !bonusDyn && session && (
@@ -305,7 +376,12 @@ export function App() {
               state={session.state}
               event={screen.event}
               result={screen.result}
-              onChoose={(id) => { haptic(10); setSession(chooseDynamic(session, id)); }}
+              onChoose={(id) => {
+                haptic(10);
+                const next = chooseDynamic(session, id);
+                reactToDelta(next.state.cash - session.state.cash, next.state.happiness - session.state.happiness);
+                setSession(next);
+              }}
               onNext={() => setSession(advance(session))}
             />
           )}

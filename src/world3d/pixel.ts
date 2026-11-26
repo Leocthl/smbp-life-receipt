@@ -74,7 +74,7 @@ export function createPixelRenderer(container: HTMLElement): PixelRenderer {
     ...shared, map: { value: cleaned.texture }, depthMap: { value: target.depthTexture }, ramps: { value: rampTexture() },
     // kept for the stage: the fade to a colour, and the old vignette/dither knobs (the look no longer uses them)
     dither: { value: 0 }, vignette: { value: 0 }, fade: { value: 0 }, fadeColor: { value: srgb(0x2b3a55) },
-    uSkyBands: { value: 1 }, uNear: { value: -200 }, uFar: { value: 400 }, uOrtho: { value: 1 }, uGap: { value: 0.9 }, uInk: { value: srgb(INK) },
+    uSkyBands: { value: 1 }, uNear: { value: -40 }, uFar: { value: 160 }, uOrtho: { value: 1 }, uGap: { value: 0.9 }, uInk: { value: srgb(INK) },
     uTime: { value: 0 }, uCursor: { value: new THREE.Vector2(0, 0) }, uYaw: { value: Math.PI / 4 }, uAgeK: { value: 0 }, uIndoor: { value: 1 },
   };
   const cleanPass = pass(CLEAN, { ...shared, map: { value: target.texture } });
@@ -134,7 +134,7 @@ export function createPixelRenderer(container: HTMLElement): PixelRenderer {
  * the picture moves in clean pixel steps instead of shimmering.
  */
 export function createDioramaCamera(viewHeight = 18) {
-  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, -200, 400);
+  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, -40, 160);
   const target = new THREE.Vector3();
   const state = { viewHeight, yaw: Math.PI / 4, pitch: Math.atan(1 / Math.sqrt(2)), distance: 60, lowHeight: 200 };
   const right = new THREE.Vector3(), up = new THREE.Vector3(), offset = new THREE.Vector3();

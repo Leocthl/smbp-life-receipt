@@ -1,4 +1,6 @@
 import type * as THREE from 'three';
+import type { CityPin } from '../engine/cityHub';
+import type { Lang } from '../i18n';
 import type { WorldDescriptor } from './descriptor';
 import type { GaussianMesh } from './gaussian';
 
@@ -12,7 +14,9 @@ export interface Spot { id: SpotId; x: number; z: number; /** walking within thi
 /** A round obstacle on the ground plane. */
 export interface Collider { x: number; z: number; r: number }
 
-export interface Framing { viewHeight: number; target: [number, number, number]; yaw: number }
+export interface Framing { viewHeight: number; target: [number, number, number]; yaw: number; pitch?: number }
+
+export type ReactionKind = 'happy' | 'worry' | 'cash';
 
 export interface WorldHandle {
   /** add this to the scene */
@@ -32,8 +36,8 @@ export interface WorldHandle {
   framing?: Framing;
   /** sky colour behind everything (hex) */
   sky: number;
-  /** per-frame animation (water, weather, lights); t = seconds since mount */
-  update(t: number, dt: number): void;
+  /** per-frame animation (water, weather, lights, living NPCs); t = seconds since mount */
+  update(t: number, dt: number, heroPos?: { x: number; z: number }): void;
   dispose(): void;
 }
 
@@ -44,6 +48,7 @@ export interface AvatarHandle {
   /** height of the head top, for camera framing and speech bubbles */
   height: number;
   setWalking(on: boolean): void;
+  react?(kind: ReactionKind): void;
   update(t: number, dt: number): void;
   dispose(): void;
 }
@@ -61,7 +66,9 @@ export interface StageApi {
   setControls(on: boolean): void;
   /** highlight a spot with a beacon; resolves when the player walks into it */
   goTo(id: SpotId): Promise<void>;
-  /** cancel a pending goTo and remove the beacon */
+  /** smoothly auto-walk the hero directly to a spot (e.g. clicking a floating city pin) and resolve on arrival */
+  walkTo(id: SpotId): Promise<void>;
+  /** cancel a pending goTo or walkTo and remove the beacon */
   clearGoal(): void;
   /** take over the camera: cutscenes drive it themselves until released */
   camera(): { cam: THREE.OrthographicCamera; state: { viewHeight: number; yaw: number; pitch: number }; target: THREE.Vector3; hold(on: boolean): void };
@@ -79,5 +86,13 @@ export interface StageApi {
   setFreeRoam(on: boolean): void;
   /** register a callback fired when the hero walks into a spot's radius during free-roam */
   onSpotEnter(cb: ((spot: Spot) => void) | null): void;
+  /** display live clickable opportunity pins floating over outdoor landmarks */
+  setCityPins(pins: readonly CityPin[]): void;
+  /** register a callback fired when the user clicks a floating city pin */
+  onPinSelect(cb: ((pin: CityPin) => void) | null): void;
+  /** trigger an expressive reaction animation on the hero avatar */
+  react(kind: ReactionKind): void;
+  /** update stage UI labels (pins, reset button) when language changes */
+  setLang?(lang: Lang): void;
   dispose(): void;
 }

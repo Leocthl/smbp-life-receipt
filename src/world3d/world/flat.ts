@@ -10,7 +10,7 @@ export const FLAT_X1 = 10.3;
 
 export function livingRoom(ctx: Ctx): void {
   const b = ctx.L.solid, g = ctx.L.glow;
-  panel(b, 'y', [6.6, 0.02, 0.4], 5, 3.4, 0xe4f5b0, { density: 18, thick: 0.01 });
+  panel(b, 'y', [6.6, 0.045, 0.4], 5, 3.4, 0xe4f5b0, { density: 18, thick: 0.01, depthBias: 0.05 });
   // low partition with a doorway to the bedroom
   box(b, 3.1, -1.5, 0.2, 2.8, 0, 1.15, 0xffe0c8, { density: 60 });
   box(b, 3.1, 2.4, 0.2, 1.2, 0, 1.15, 0xffe0c8, { density: 60 });
@@ -24,9 +24,9 @@ export function livingRoom(ctx: Ctx): void {
   box(b, 8.9, -2.55, 2.2, 0.95, 0.95, 0.06, 0xfff6dc, { density: 90, edge: 0.4 });
   box(b, 10.0, -2.5, 0.8, 0.8, 0, 2.0, 0xe4dcff, { density: 70 });
   g.blob(8.5, 1.15, -2.55, 0.1, 0.1, 0.1, 8, 0xfff0a0, 0.04);
-  panel(b, 'z', [6.8, 1.1, -2.97], 1.0, 2.2, 0xa8744a, { density: 80 });
-  panel(b, 'z', [6.8, 1.1, -2.95], 1.2, 2.4, 0xfff6dc, { density: 50 });
-  panel(b, 'y', [6.8, 0.02, -2.3], 1.0, 0.7, 0xd9553f, { density: 30, thick: 0.01 });
+  panel(b, 'z', [6.8, 1.1, -2.95], 1.2, 2.4, 0xfff6dc, { density: 50, depthBias: 0.05 });
+  panel(b, 'z', [6.8, 1.1, -2.91], 1.0, 2.2, 0xa8744a, { density: 80, depthBias: 0.09 });
+  panel(b, 'y', [6.8, 0.05, -2.3], 1.0, 0.7, 0xd9553f, { density: 30, thick: 0.01, depthBias: 0.06 });
   g.blob(7.2, 1.1, -2.9, 0.05, 0.05, 0.02, 5, 0xffd85a, 0.03);
   ctx.colliders.push(...boxColliders(6.4, 0.4, 1.5, 1.5), ...boxColliders(4.7, -2.5, 2, 0.9), ...boxColliders(8.9, -2.55, 2.1, 0.9), ...boxColliders(10, -2.5, 0.8, 0.8),
     ...boxColliders(3.1, -1.5, 0.2, 2.8), ...boxColliders(3.1, 2.4, 0.2, 1.2));

@@ -48,6 +48,7 @@ export function WorldBackdrop({ state, lang, onStage }: Props) {
 
   useEffect(() => {
     host.current?.querySelector('.ml-stage-joy')?.setAttribute('aria-label', translate(lang, 'stage.joy.label'));
+    stage?.setLang?.(lang);
   }, [stage, lang]);
 
   return (

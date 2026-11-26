@@ -30,6 +30,8 @@ export interface GaussianInput {
   fx?: boolean;
   /** face detail (eyes, mouth): drawn just in front of its surface and protected from speck cleanup */
   detail?: boolean;
+  /** world units toward camera for layered panels/decals */
+  depthBias?: number;
 }
 
 export interface GaussianMesh {
@@ -151,7 +153,7 @@ function pack(g: GaussianInput, data: Float32Array, o: number, m: THREE.Matrix3,
     }
   }
   const lo = g.clip ? g.clip.lo.map((v, k) => v - g.p[k]) : [0, 0, 0], hi = g.clip ? g.clip.hi.map((v, k) => v - g.p[k]) : [0, 0, 0];
-  data.set([g.p[0], g.p[1], g.p[2], g.sway ?? 0, cov(0, 0), cov(0, 1), cov(0, 2), cov(1, 1), cov(1, 2), cov(2, 2), opacity, flags, v[0], v[1], v[2], ramp * 8 + (step ?? BASE_STEP), inv[0], inv[1], inv[2], 0, lo[0], lo[1], lo[2], 0, hi[0], hi[1], hi[2], 0], o);
+  data.set([g.p[0], g.p[1], g.p[2], g.sway ?? 0, cov(0, 0), cov(0, 1), cov(0, 2), cov(1, 1), cov(1, 2), cov(2, 2), opacity, flags, v[0], v[1], v[2], ramp * 8 + (step ?? BASE_STEP), inv[0], inv[1], inv[2], g.depthBias ?? 0, lo[0], lo[1], lo[2], 0, hi[0], hi[1], hi[2], 0], o);
 }
 
 function makeMaterial(uniforms: Record<string, THREE.IUniform>, soft: boolean): THREE.ShaderMaterial {

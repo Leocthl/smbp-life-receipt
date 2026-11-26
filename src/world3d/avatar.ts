@@ -84,24 +84,58 @@ export const buildAvatar: BuildAvatar = (d, seed) => {
     parts.push({ mesh: cane });
   }
   parts.forEach((p) => { p.mesh.uniforms.uBias.value = HERO_BIAS; });
-  let walking = 0, target = 0, phase = 0;
+  let walking = 0, target = 0, phase = 0, currentT = 0;
+  let reactKind: 'happy' | 'worry' | 'cash' | null = null, reactAt = -10;
+  const REACT_DURATION = 0.7;
   const lean = l.slouch, blinkAt = (seed % 7) * 0.3, canBlink = !l.shades;
-  return {
+  const handle = {
     group, meshes: parts.map((p) => p.mesh), height: HERO_HEIGHT,
-    setWalking(on) { target = on ? 1 : 0; },
-    update(t, dt) {
+    setWalking(on: boolean) { target = on ? 1 : 0; },
+    react(kind: 'happy' | 'worry' | 'cash') { reactKind = kind; reactAt = currentT; },
+    update(t: number, dt: number) {
+      currentT = t;
       walking += (target - walking) * Math.min(1, dt * 10);
       phase += dt * (7 + 3 * l.vigor) * walking;
+      const idle = 1 - walking;
       const swing = Math.sin(phase) * 0.65 * walking * l.vigor;
+      const idleArm = Math.sin(t * 1.6) * 0.05 * idle;
+
+      const glancePeriod = 6.2;
+      const glancePhase = (t + blinkAt) % glancePeriod;
+      const glanceDir = Math.floor((t + blinkAt) / glancePeriod) % 2 === 0 ? 1 : -1;
+      const glance = glancePhase < 2.2 ? Math.sin((glancePhase / 2.2) * Math.PI) * 0.25 * glanceDir * idle : 0;
+
+      let cheerY = 0, cheerArmX = 0, cheerArmZ = 0, worrySlump = 0, worryShakeY = 0;
+      const rElapsed = t - reactAt;
+      if (reactKind !== null && rElapsed >= 0 && rElapsed < REACT_DURATION) {
+        const p = rElapsed / REACT_DURATION;
+        const env = Math.sin(p * Math.PI);
+        if (reactKind === 'happy' || reactKind === 'cash') {
+          cheerY = Math.abs(Math.sin(p * Math.PI * 2)) * 0.26 * env;
+          cheerArmX = -2.45 * env;
+          cheerArmZ = 0.35 * env;
+        } else {
+          worryShakeY = Math.sin(p * Math.PI * 5) * 0.38 * env;
+          worrySlump = 0.16 * env;
+        }
+      } else if (rElapsed >= REACT_DURATION) {
+        reactKind = null;
+      }
+
       legL.pivot.rotation.x = swing; legR.pivot.rotation.x = -swing;
-      armL.pivot.rotation.x = -swing * 0.9; armR.pivot.rotation.x = swing * 0.9;
-      body.position.y = RIG.hip + Math.abs(Math.sin(phase)) * 0.08 * walking + Math.sin(t * 2) * 0.02;
-      body.rotation.x = lean + walking * 0.06;
+      armL.pivot.rotation.x = -swing * 0.9 + idleArm + cheerArmX;
+      armR.pivot.rotation.x = swing * 0.9 - idleArm + cheerArmX;
+      armL.pivot.rotation.z = -0.04 * idle - cheerArmZ;
+      armR.pivot.rotation.z = 0.04 * idle + cheerArmZ;
+      body.position.y = RIG.hip + Math.abs(Math.sin(phase)) * 0.08 * walking + Math.sin(t * 2.1) * 0.024 * (0.4 + 0.6 * idle) + cheerY - worrySlump * 0.35;
+      body.rotation.x = lean + walking * 0.06 + worrySlump;
       body.rotation.z = Math.sin(phase) * 0.04 * walking;
-      head.pivot.rotation.x = -lean * 0.5 + Math.sin(t * 1.3) * 0.02;
+      head.pivot.rotation.x = -lean * 0.5 + Math.sin(t * 1.4) * 0.025 + worrySlump * 0.6;
+      head.pivot.rotation.y = glance + worryShakeY;
       const shut = canBlink && (t + blinkAt) % 3.6 < 0.14;
       eyesOpen.mesh.mesh.visible = !shut; eyesShut.mesh.mesh.visible = shut;
     },
     dispose() { parts.forEach((p) => p.mesh.dispose()); },
   };
+  return handle;
 };

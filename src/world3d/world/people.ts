@@ -40,25 +40,25 @@ function friends(ctx: Ctx): void {
 
 function work(ctx: Ctx): void {
   const job = ctx.d.job;
-  if (job === 'employed') around(ctx, 10.4, -7.6, 7, 2.1, 0.6, (i) => ({ top: i % 2 ? 0xfff6dc : 0x8fd3ff, pants: SUIT[i % 3], tie: i % 2 ? 0xd9553f : 0x3d7fc4 }));
+  if (job === 'employed') around(ctx, 10.4, -7.6, 5, 2.1, 0.6, (i) => ({ top: i % 2 ? 0xfff6dc : 0x8fd3ff, pants: SUIT[i % 3], tie: i % 2 ? 0xd9553f : 0x3d7fc4 }));
   else if (job === 'unemployed') around(ctx, 10.4, -7.6, 1, 0.5, 0.3, () => ({ top: 0x9aa8c4, pants: 0x2b3a55 }));
-  else if (job === 'retired') around(ctx, 10.4, -7.6, 3, 2, 0.6, (i) => ({ top: i % 2 ? 0xfff6dc : 0x8fd3ff, pants: SUIT[i % 3] }));
+  else if (job === 'retired') around(ctx, 10.4, -7.6, 2, 2, 0.6, (i) => ({ top: i % 2 ? 0xfff6dc : 0x8fd3ff, pants: SUIT[i % 3] }));
   const student = job === 'student';
   if (ctx.ext.z1 < 9) return;
-  around(ctx, -7.7, 5.9, student ? 9 : 2, 1.2, 2.4, () => ({ pack: 0xd9553f }));
-  if (student) around(ctx, -7.7, 5.9, 3, 1.2, 2.4, () => ({ pack: 0x7ed07a, top: 0xffd85a }));
+  around(ctx, -7.7, 5.9, student ? 6 : 2, 1.2, 2.4, () => ({ pack: 0xd9553f }));
+  if (student) around(ctx, -7.7, 5.9, 2, 1.2, 2.4, () => ({ pack: 0x7ed07a, top: 0xffd85a }));
 }
 
 function town(ctx: Ctx): void {
   const retired = ctx.d.stage === 'retired' || ctx.d.age >= 62;
-  around(ctx, -1.5, -7.3, 1 + Math.round(ctx.d.lifestyle * 3), 1.3, 0.3);
-  around(ctx, 6.5, 1.8, 5, 3.4, 1.2);
-  around(ctx, -2.5, 3.5, retired ? 2 : 3, 2.5, 2.5);
+  around(ctx, -1.5, -7.3, 1 + Math.round(ctx.d.lifestyle * 2), 1.3, 0.3);
+  around(ctx, 6.5, 1.8, 3, 3.4, 1.2);
+  around(ctx, -2.5, 3.5, retired ? 1 : 2, 2.5, 2.5);
   if (retired) {
     around(ctx, -4.2, 4.2, 2, 0.15, 0.05, () => ({ hair: WHITE_HAIR, top: 0xb9a7ff, hairStyle: 'thin', cane: true }));
     around(ctx, -0.8, 2.3, 1, 0.05, 0.05, () => ({ hair: WHITE_HAIR, top: 0xa8744a, hairStyle: 'thin' }));
   }
-  around(ctx, 4.25, -7.3, 2, 1.2, 0.3, (i) => ({ pants: SUIT[i % 3] }));
+  around(ctx, 4.25, -7.3, 1, 1.2, 0.3, (i) => ({ pants: SUIT[i % 3] }));
 }
 
 export function buildPeople(ctx: Ctx): void {

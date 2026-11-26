@@ -16,66 +16,87 @@ const jitter = (spread: number) => semitones((Math.random() * 2 - 1) * spread);
 const PENTA = [0, 2, 4, 7, 9, 12, 14, 16];
 
 const RECIPES: Record<SfxName, (b: NonNullable<ReturnType<typeof liveBus>>, arg: number) => void> = {
-  // paper printer: a short rasp plus a tiny square blip, pitch wobbling so it never sounds looped
+  // crisp thermal receipt zip
   printer: (b) => {
-    noise(b, { dur: 0.03, f: 2600 * jitter(2), q: 2, db: -16 });
-    tone(b, { f: 1500 * jitter(3), dur: 0.02, type: 'square', db: -30 });
+    noise(b, { dur: 0.026, f: 3000 * jitter(1.5), q: 1.8, db: -17 });
+    tone(b, { f: 1620 * jitter(2), dur: 0.022, type: 'triangle', db: -26 });
   },
-  click: (b) => tone(b, { f: 920 * jitter(1), to: 640, dur: 0.05, type: 'triangle', db: -14 }),
-  // arg: money moved. Up is a bright rising ka-ching, down a soft falling two-note; bigger moves reach higher
+  // tactile marimba-key pop
+  click: (b) => {
+    const f = 820 * jitter(0.8);
+    tone(b, { f, to: f * 0.72, dur: 0.055, type: 'triangle', db: -13, filter: 2800 });
+    tone(b, { f: f * 1.5, dur: 0.03, type: 'sine', db: -24 });
+  },
+  // arg: money moved. Up is a crisp major-9th ka-ching chime; down is a gentle warm marimba drop
   kaching: (b, arg) => {
     const size = Math.min(1, Math.log10(Math.abs(arg) + 10) / 5.5);
     if (arg >= 0) {
-      const base = 1175 * semitones(size * 7);
-      tone(b, { f: base, dur: 0.12, type: 'triangle', db: -13 });
-      tone(b, { f: base * 1.5, dur: 0.38, type: 'sine', db: -12, at: 0.07 });
-      tone(b, { f: base * 3.01, dur: 0.22, type: 'sine', db: -24, at: 0.07 });
-      noise(b, { dur: 0.05, f: 6000, q: 0.8, db: -22 });
+      const base = 1046.5 * semitones(size * 5);
+      tone(b, { f: base, dur: 0.14, type: 'triangle', db: -13 });
+      tone(b, { f: base * 1.25, dur: 0.2, type: 'sine', db: -15, at: 0.055 });
+      tone(b, { f: base * 1.5, dur: 0.42, type: 'sine', db: -11, at: 0.11 });
+      tone(b, { f: base * 2.25, dur: 0.28, type: 'sine', db: -23, at: 0.13 });
+      noise(b, { dur: 0.045, f: 6400, q: 0.9, db: -22 });
     } else {
-      const base = 392 * semitones(size * 3);
-      tone(b, { f: base, to: base * 0.96, dur: 0.16, type: 'triangle', db: -13 });
-      tone(b, { f: base * 0.75, to: base * 0.7, dur: 0.34, type: 'triangle', db: -13, at: 0.1 });
+      const base = 440 * semitones(size * 2);
+      tone(b, { f: base, to: base * 0.92, dur: 0.15, type: 'triangle', db: -13, filter: 1800 });
+      tone(b, { f: base * 0.75, to: base * 0.67, dur: 0.3, type: 'triangle', db: -13, at: 0.09, filter: 1500 });
     }
   },
   // arg: -1 falling, +1 rising (money ticking down or up)
-  coin: (b, arg) => tone(b, { f: (arg >= 0 ? 1900 : 1500) * jitter(1.5), dur: 0.05, type: 'sine', db: -20 }),
+  coin: (b, arg) => tone(b, { f: (arg >= 0 ? 1760 : 1318) * jitter(1.2), dur: 0.055, type: 'sine', db: -19 }),
   chirpHappy: (b) => {
-    tone(b, { f: 660, to: 880, dur: 0.1, type: 'sine', db: -14 });
-    tone(b, { f: 880, to: 1180, dur: 0.14, type: 'sine', db: -14, at: 0.1 });
+    tone(b, { f: 659.25, to: 880, dur: 0.09, type: 'triangle', db: -14 });
+    tone(b, { f: 987.77, to: 1318.5, dur: 0.14, type: 'sine', db: -13, at: 0.085 });
   },
   chirpWorried: (b) => {
-    tone(b, { f: 440, to: 350, dur: 0.22, type: 'triangle', db: -13, wobble: 9 });
-    tone(b, { f: 370, to: 290, dur: 0.3, type: 'triangle', db: -14, at: 0.2, wobble: 9 });
+    tone(b, { f: 440, to: 370, dur: 0.18, type: 'triangle', db: -14, wobble: 6, filter: 1800 });
+    tone(b, { f: 349.23, to: 293.66, dur: 0.26, type: 'triangle', db: -15, at: 0.16, wobble: 6, filter: 1600 });
   },
-  // a small bell: three partials per note, an arpeggio up
+  // warm celebratory chime arpeggio
   yearEnd: (b) => {
-    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
-      const at = i * 0.11;
-      tone(b, { f, dur: 1.1, db: -15, at });
-      tone(b, { f: f * 2.76, dur: 0.5, db: -28, at });
-      tone(b, { f: f * 5.4, dur: 0.25, db: -34, at });
+    [523.25, 659.25, 783.99, 987.77, 1318.5].forEach((f, i) => {
+      const at = i * 0.09;
+      tone(b, { f, dur: 0.9, type: 'triangle', db: -15, at, filter: 3800 });
+      tone(b, { f: f * 2, dur: 0.45, type: 'sine', db: -27, at });
     });
   },
   // arg 0 triumph, 1 warm, 2 wry
   fanfare: (b, arg) => {
     const chords = [
-      [[523.25, 659.25, 783.99, 1046.5], [587.33, 739.99, 880, 1174.7], [659.25, 783.99, 987.77, 1318.5]],
-      [[392, 493.88, 587.33, 783.99], [440, 523.25, 659.25, 880]],
-      [[440, 523.25, 659.25], [392, 466.16, 587.33], [329.63, 392, 493.88]],
+      [[523.25, 659.25, 783.99, 987.77], [587.33, 739.99, 880, 1174.7], [659.25, 783.99, 987.77, 1318.5]],
+      [[392, 493.88, 587.33, 783.99], [440, 523.25, 659.25, 880], [523.25, 659.25, 783.99, 1046.5]],
+      [[440, 523.25, 659.25], [392, 493.88, 587.33], [349.23, 440, 523.25, 659.25]],
     ][arg] ?? [];
-    chords.forEach((notes, i) => notes.forEach((f) => tone(b, { f, dur: arg === 0 ? 0.5 : 0.8, type: arg === 0 ? 'square' : 'triangle', db: arg === 0 ? -26 : -18, at: i * 0.22, attack: 0.02 })));
-    if (arg === 0) tone(b, { f: 1568, dur: 1.2, db: -20, at: chords.length * 0.22 });
+    chords.forEach((notes, i) =>
+      notes.forEach((f, j) =>
+        tone(b, {
+          f,
+          dur: arg === 0 ? 0.55 : 0.78,
+          type: j % 2 === 0 ? 'triangle' : 'sine',
+          db: arg === 0 ? -17 : -16,
+          at: i * 0.2 + j * 0.015,
+          attack: 0.016,
+          filter: 3400,
+        }),
+      ),
+    );
+    if (arg === 0) tone(b, { f: 1567.98, dur: 1.1, type: 'sine', db: -18, at: chords.length * 0.2 });
   },
+  // soft upbeat sneaker tap
   step: (b) => {
-    noise(b, { dur: 0.06, f: 700 * jitter(3), q: 0.7, type: 'lowpass', db: -18 });
-    tone(b, { f: 130 * jitter(2), to: 90, dur: 0.05, db: -22 });
+    noise(b, { dur: 0.045, f: 900 * jitter(2.5), q: 0.8, type: 'lowpass', db: -20 });
+    tone(b, { f: 165 * jitter(1.5), to: 105, dur: 0.045, db: -22 });
   },
   sparkle: (b) => {
-    for (let i = 0; i < 4; i += 1) tone(b, { f: 1318 * semitones(PENTA[Math.floor(Math.random() * PENTA.length)]), dur: 0.18, db: -22, at: i * 0.045 });
+    for (let i = 0; i < 4; i += 1) {
+      tone(b, { f: 1174.66 * semitones(PENTA[Math.floor(Math.random() * PENTA.length)]), dur: 0.2, type: 'sine', db: -20, at: i * 0.045 });
+    }
   },
   milestone: (b) => {
-    [784, 988, 1175, 1568].forEach((f, i) => tone(b, { f, dur: 0.4, type: 'triangle', db: -17, at: i * 0.08 }));
-    tone(b, { f: 3136, dur: 0.6, db: -28, at: 0.3 });
+    [659.25, 783.99, 987.77, 1318.51, 1567.98].forEach((f, i) =>
+      tone(b, { f, dur: 0.45, type: 'triangle', db: -16, at: i * 0.075, filter: 3800 }),
+    );
   },
 };
 

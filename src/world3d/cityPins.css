@@ -1,0 +1,245 @@
+/* Floating world-space city hub pins and ambient street chatter bubbles (cityPins.ts). */
+.ml-city-pins {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ml-city-pins[hidden] {
+  display: none;
+}
+
+.ml-city-pin {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: auto;
+  appearance: none;
+  border: 0;
+  border-radius: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  max-width: 184px;
+  padding: 5px 9px 7px 7px;
+  background: #fff6dc;
+  color: #1f2a44;
+  font-family: "PingFang HK", "Noto Sans HK", "Microsoft JhengHei", system-ui, sans-serif;
+  text-align: left;
+  box-shadow:
+    0 -2px 0 0 #2b3a55,
+    0 2px 0 0 #2b3a55,
+    -2px 0 0 0 #2b3a55,
+    2px 0 0 0 #2b3a55,
+    inset 0 -3px 0 0 #e6d6a6,
+    3px 4px 0 0 rgba(43, 58, 85, 0.25);
+  will-change: transform;
+  transition: filter 140ms ease, background-color 140ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: hover) {
+  .ml-city-pin:hover {
+    background: #fffaf0;
+    filter: brightness(1.03);
+  }
+}
+
+.ml-city-pin:active {
+  background: #f5e8c4;
+  box-shadow:
+    0 -2px 0 0 #2b3a55,
+    0 2px 0 0 #2b3a55,
+    -2px 0 0 0 #2b3a55,
+    2px 0 0 0 #2b3a55,
+    inset 0 -1px 0 0 #e6d6a6;
+}
+
+.ml-city-pin:focus-visible {
+  outline: 3px solid #2b3a55;
+  outline-offset: 2px;
+}
+
+.ml-city-pin__dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  background: #ffd85a;
+  box-shadow:
+    0 -1px 0 0 #2b3a55,
+    0 1px 0 0 #2b3a55,
+    -1px 0 0 0 #2b3a55,
+    1px 0 0 0 #2b3a55;
+}
+
+.ml-city-pin[data-tag="money"] .ml-city-pin__dot {
+  background: #ffd85a;
+}
+
+.ml-city-pin[data-tag="bonds"] .ml-city-pin__dot {
+  background: #ff8a6b;
+}
+
+.ml-city-pin[data-tag="mood"] .ml-city-pin__dot {
+  background: #7ed07a;
+}
+
+.ml-city-pin[data-tag="risk"] .ml-city-pin__dot {
+  background: #b9a7ff;
+}
+
+.ml-city-pin__icon {
+  font-size: 16px;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+.ml-city-pin__body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  gap: 1px;
+}
+
+.ml-city-pin__label {
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.15;
+  color: #1f2a44;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 118px;
+}
+
+.ml-city-pin__sub {
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: #566683;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 118px;
+}
+
+.ml-city-pin__check {
+  display: none;
+  flex: 0 0 auto;
+  padding: 1px 4px;
+  background: #7ed07a;
+  color: #1f2a44;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1.1;
+  box-shadow:
+    0 -1px 0 0 #2b3a55,
+    0 1px 0 0 #2b3a55,
+    -1px 0 0 0 #2b3a55,
+    1px 0 0 0 #2b3a55;
+}
+
+.ml-city-pin[data-visited="1"] {
+  opacity: 0.72;
+  background: #f3ead0;
+}
+
+.ml-city-pin[data-visited="1"] .ml-city-pin__check {
+  display: inline-block;
+}
+
+.ml-city-pin[data-urgent="1"] {
+  animation: ml-city-pin-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes ml-city-pin-pulse {
+  0%, 100% {
+    box-shadow:
+      0 -2px 0 0 #2b3a55,
+      0 2px 0 0 #2b3a55,
+      -2px 0 0 0 #2b3a55,
+      2px 0 0 0 #2b3a55,
+      inset 0 -3px 0 0 #e6d6a6,
+      0 0 0 3px rgba(255, 138, 107, 0.35),
+      3px 4px 0 0 rgba(43, 58, 85, 0.25);
+  }
+  50% {
+    box-shadow:
+      0 -2px 0 0 #2b3a55,
+      0 2px 0 0 #2b3a55,
+      -2px 0 0 0 #2b3a55,
+      2px 0 0 0 #2b3a55,
+      inset 0 -3px 0 0 #e6d6a6,
+      0 0 0 6px rgba(255, 216, 90, 0.65),
+      3px 4px 0 0 rgba(43, 58, 85, 0.25);
+  }
+}
+
+.ml-street-chatter {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  max-width: 210px;
+  padding: 5px 9px;
+  background: rgba(255, 250, 240, 0.94);
+  color: #1f2a44;
+  font-family: "PingFang HK", "Noto Sans HK", "Microsoft JhengHei", system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.3;
+  box-shadow:
+    0 -2px 0 0 #2b3a55,
+    0 2px 0 0 #2b3a55,
+    -2px 0 0 0 #2b3a55,
+    2px 0 0 0 #2b3a55,
+    2px 3px 0 0 rgba(43, 58, 85, 0.2);
+  opacity: 0;
+  transition: opacity 260ms ease;
+  will-change: transform, opacity;
+}
+
+.ml-street-chatter--on {
+  opacity: 1;
+}
+
+.ml-street-chatter[hidden] {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .ml-city-pin {
+    max-width: 152px;
+    padding: 4px 7px 6px 6px;
+    gap: 5px;
+  }
+  .ml-city-pin__icon {
+    font-size: 15px;
+  }
+  .ml-city-pin__label {
+    font-size: 11px;
+    max-width: 96px;
+  }
+  .ml-city-pin__sub {
+    font-size: 10px;
+    max-width: 96px;
+  }
+  .ml-street-chatter {
+    max-width: 176px;
+    font-size: 10.5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ml-city-pin[data-urgent="1"] {
+    animation: none;
+  }
+  .ml-street-chatter {
+    transition: none;
+  }
+}

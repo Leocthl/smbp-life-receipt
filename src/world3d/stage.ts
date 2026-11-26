@@ -1,7 +1,9 @@
 import * as THREE from 'three';
+import type { CityPin } from '../engine/cityHub';
 import { translate, type Lang } from '../i18n';
 import { buildAvatar } from './avatar';
-import type { AvatarHandle, Spot, SpotId, StageApi, WorldHandle } from './contracts';
+import { createCityPins } from './cityPins';
+import type { AvatarHandle, ReactionKind, Spot, SpotId, StageApi, WorldHandle } from './contracts';
 import {
   clampPitch,
   clampPitchOffset,
@@ -60,7 +62,7 @@ export interface StageOptions { lang?: Lang }
 
 interface Goal { id: SpotId; resolve: () => void; reject: (e: Error) => void }
 interface Task { step: (t: number, dt: number) => boolean | void; resolve: () => void }
-interface Frame { vh: number; x: number; y: number; z: number; yaw: number }
+interface Frame { vh: number; x: number; y: number; z: number; yaw: number; pitch: number }
 
 function turnToward(from: number, to: number, k: number): number {
   return from + Math.atan2(Math.sin(to - from), Math.cos(to - from)) * k;
@@ -96,6 +98,7 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
   const guide = createGuide(container, scene, lang);
   const spotRings = createSpotRings(scene);
   spotRings.setSpots(world.spots);
+  const cityPins = createCityPins(container, lang);
 
   const resetBtn = document.createElement('button');
   resetBtn.type = 'button';
@@ -111,9 +114,12 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
   let walking = false;
   let tap: Walk | null = null;
   let goal: Goal | null = null;
+  let autoWalk = false;
+  let autoWalkDeadline = Infinity;
   let enabled = true;
   let freeRoam = false;
   let spotEnterCb: ((spot: Spot) => void) | null = null;
+  let activeCityPins: readonly CityPin[] = [];
   let insideSpotId: SpotId | null = null;
   let hold = false;
   let revealAt = 0;
@@ -121,6 +127,7 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
   let revealOnly: readonly GaussianMesh[] | null = null; // null: every mesh grows in
   let framing: Frame | null = null; // where the camera is allowed to follow the avatar
   let baseYaw = DEFAULT_YAW;
+  let basePitch = world.framing?.pitch ?? DEFAULT_PITCH;
   let frameVh = cam.state.viewHeight; // the framing's view height (the fit below may zoom out past it)
   let userYaw = 0;
   let userPitch = 0;
@@ -150,7 +157,7 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
   let sheetBottom = 0, hudTop = 0, insetNow = 0, dockInset = 0, dockNow = 0;
 
   function snapshot(): Frame {
-    return { vh: frameVh || cam.state.viewHeight, x: cam.target.x, y: cam.target.y, z: cam.target.z, yaw: baseYaw };
+    return { vh: frameVh || cam.state.viewHeight, x: cam.target.x, y: cam.target.y, z: cam.target.z, yaw: baseYaw, pitch: basePitch };
   }
 
   function syncWalkClass() {
@@ -239,7 +246,9 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
 
   /** Keys or joystick override a tap. Age-18 bedroom stays stationary while still allowing 360° orbit. */
   function input(dt: number): Walk | null {
-    if (!enabled || isRoomLocked(d.scope)) return null;
+    if (isRoomLocked(d.scope)) return null;
+    if (autoWalk && tap) return stepTowardTap(dt);
+    if (!enabled) return null;
     const dir = ctl.walk(cam.state.yaw);
     if (dir.x !== 0 || dir.z !== 0) {
       tap = null;
@@ -252,7 +261,9 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
     const g = goal;
     if (!g) return;
     const spot = world.spots.find((sp) => sp.id === g.id);
-    if (spot && Math.hypot(pos.x - spot.x, pos.z - spot.z) <= spot.r) finishGoal(g, spot);
+    if (spot && (Math.hypot(pos.x - spot.x, pos.z - spot.z) <= spot.r || (autoWalk && t >= autoWalkDeadline))) {
+      finishGoal(g, spot);
+    }
   }
 
   function endGoalView() {
@@ -263,6 +274,8 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
 
   function finishGoal(g: Goal, spot: Spot) {
     goal = null;
+    autoWalk = false;
+    autoWalkDeadline = Infinity;
     tap = null;
     const travelled = goalFrom > spot.r + 1;
     if (travelled) { guide.pop(spot.x, spot.z); hopAt = t; }
@@ -274,15 +287,18 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
 
   function cancelGoal() {
     const g = goal;
+    autoWalk = false;
+    autoWalkDeadline = Infinity;
     if (!g) return;
     goal = null;
+    tap = null;
     endGoalView();
     g.reject(new Error('stage: goal cancelled'));
   }
 
   /** Frames hero and place together (both in the free area), so the walk starts with the whole way in view. */
   function frameWalk(spot: Spot) {
-    const { yaw } = frameTo, { right, up } = camAxes(yaw, cam.state.pitch);
+    const { yaw, pitch } = frameTo, { right, up } = camAxes(yaw, pitch);
     const pts: P3[] = [[pos.x, 0, pos.z], [pos.x, avatar.height, pos.z], [spot.x, 0, spot.z], [spot.x, SPOT_TOP, spot.z]];
     const screen = pts.map((p) => right[0] * p[0] + right[2] * p[2]);
     const ups = pts.map((p) => up[0] * p[0] + up[1] * p[1] + up[2] * p[2]);
@@ -292,7 +308,7 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
     const ins = { top: Math.max(hudTop, WALK_PAD.top), bottom: Math.max(sheetBottom + hidden(), WALK_PAD.bottom), right: dockInset };
     const base = frameTo.vh;
     const vh = Math.max(Math.max(WALK_MIN_VH, base * 0.35), Math.min(base, fitViewHeight({ w: boxW, h: boxH }, ins, half, WALK_PAD.margin)));
-    framing = { vh, x: tx, y: ty, z: tz, yaw };
+    framing = { vh, x: tx, y: ty, z: tz, yaw, pitch };
     frameFrom = snapshot();
     frameTo = { ...framing };
     frameAt = reduced ? t - FRAME_SECONDS : t;
@@ -309,6 +325,7 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
     const k = reduced ? 1 : smooth(clamp01((t - frameAt) / FRAME_SECONDS));
     frameVh = lerp(frameFrom.vh, frameTo.vh, k);
     baseYaw = lerp(frameFrom.yaw, frameTo.yaw, k);
+    basePitch = lerp(frameFrom.pitch, frameTo.pitch, k);
     cam.target.set(lerp(frameFrom.x, frameTo.x, k), lerp(frameFrom.y, frameTo.y, k), lerp(frameFrom.z, frameTo.z, k));
     frameDone = k >= 1;
     return !frameDone;
@@ -317,12 +334,19 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
   /** Tweens to a world's framing (or the default view). Instant when asked, or under reduced motion. */
   function setFraming(w: WorldHandle, instant: boolean) {
     const f = w.framing;
-    framing = f ? { vh: f.viewHeight, x: f.target[0], y: f.target[1], z: f.target[2], yaw: f.yaw } : null;
+    const pitch = f?.pitch ?? DEFAULT_PITCH;
+    framing = f ? { vh: f.viewHeight, x: f.target[0], y: f.target[1], z: f.target[2], yaw: f.yaw, pitch } : null;
     frameFrom = snapshot();
-    frameTo = framing ? { ...framing, vh: widen(framing.vh) } : { vh: widen(VIEW_HEIGHT), x: cam.target.x, y: cam.target.y, z: cam.target.z, yaw: DEFAULT_YAW };
+    frameTo = framing ? { ...framing, vh: widen(framing.vh) } : { vh: widen(VIEW_HEIGHT), x: cam.target.x, y: cam.target.y, z: cam.target.z, yaw: DEFAULT_YAW, pitch: DEFAULT_PITCH };
     frameAt = instant || reduced ? t - FRAME_SECONDS : t;
+    if (instant || reduced) {
+      frameVh = frameTo.vh;
+      baseYaw = frameTo.yaw;
+      basePitch = frameTo.pitch;
+      cam.state.pitch = clampPitch(basePitch + userPitch);
+    }
     frameDone = false;
-    contentHalf = scopeHalf(d.scope, [frameTo.x, frameTo.y, frameTo.z], frameTo.yaw, cam.state.pitch);
+    contentHalf = scopeHalf(d.scope, [frameTo.x, frameTo.y, frameTo.z], frameTo.yaw, frameTo.pitch);
   }
 
   const hidden = () => Math.max(0, boxH - window.innerHeight); // the part of a large-viewport canvas the browser bars cover
@@ -366,7 +390,7 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
       const pxOff = mouseActive && !reduced ? cursorNow.x * 0.032 : 0;
       const pyOff = mouseActive && !reduced ? cursorNow.y * 0.015 : 0;
       cam.state.yaw = baseYaw + userYaw + pxOff;
-      cam.state.pitch = clampPitch(DEFAULT_PITCH + userPitch + pyOff);
+      cam.state.pitch = clampPitch(basePitch + userPitch + pyOff);
       cam.state.viewHeight = Math.max(frameVh, fitNow) * userZoom;
     }
 
@@ -452,7 +476,7 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
     if (walking) facing = turnToward(facing, Math.atan2(next.x - pos.x, next.z - pos.z), 1 - Math.exp(-dt * TURN_RATE));
     pos = next;
     avatar.setWalking(walking);
-    world.update(t, dt);
+    world.update(t, dt, pos);
     avatar.update(t, dt);
     const hopK = (t - hopAt) / HOP_SECONDS;
     avatar.group.position.set(pos.x, hopK >= 0 && hopK < 1 ? Math.sin(hopK * Math.PI) * HOP_HEIGHT : 0, pos.z);
@@ -464,6 +488,16 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
     updateOrbitAndParallax(dt);
     spotRings.setVisible(freeRoam && !goal && isLoopingScope(d.scope));
     spotRings.update(t, reduced);
+    const showPins = !hold && !goal && isLoopingScope(d.scope) && activeCityPins.length > 0;
+    cityPins.setVisible(showPins);
+    if (showPins) {
+      cityPins.update({
+        t,
+        cam: cam.camera,
+        box: { w: boxW, h: boxH },
+        ins: { top: hudTop, bottom: sheetBottom + hidden(), right: dockInset },
+      });
+    }
     px.uniforms.uTime.value = t;
     px.uniforms.uYaw.value = cam.state.yaw;
     px.uniforms.uAgeK.value = clamp01((d.age - 18) / (65 - 18));
@@ -552,6 +586,7 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
       avatar.setWalking(walking);
       pos = resolvePosition(indoorScope(next.scope) !== indoorScope(prevScope) ? spawnFor(next.scope) : pos, world, isLoopingScope(next.scope));
       spotRings.setSpots(world.spots);
+      cityPins.setPins(activeCityPins, world.spots);
       insideSpotId = null;
       syncWalkClass();
       if (!sameScope) tap = null; // a keepsake growing in must not stop a walk
@@ -577,6 +612,25 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
       if (!spot) return Promise.reject(new Error(`stage: no spot "${id}" in this world`));
       goalFrom = Math.hypot(pos.x - spot.x, pos.z - spot.z);
       if (goalFrom > spot.r) { guide.start(spot); frameWalk(spot); }
+      return new Promise<void>((resolve, reject) => { goal = { id, resolve, reject }; });
+    },
+    walkTo(id) {
+      cancelGoal();
+      const spot = world.spots.find((sp) => sp.id === id);
+      if (!spot) return Promise.reject(new Error(`stage: no spot "${id}" in this world`));
+      goalFrom = Math.hypot(pos.x - spot.x, pos.z - spot.z);
+      if (goalFrom <= spot.r * 1.1) {
+        if (!reduced) {
+          guide.pop(spot.x, spot.z);
+          hopAt = t;
+        }
+        return Promise.resolve();
+      }
+      autoWalk = true;
+      autoWalkDeadline = t + 4.5;
+      tap = { x: spot.x, z: spot.z };
+      guide.start(spot);
+      frameWalk(spot);
       return new Promise<void>((resolve, reject) => { goal = { id, resolve, reject }; });
     },
     clearGoal: cancelGoal,
@@ -605,6 +659,20 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
       spotEnterCb = cb;
       if (!cb) insideSpotId = null;
     },
+    setCityPins(pins) {
+      activeCityPins = pins;
+      cityPins.setPins(pins, world.spots);
+    },
+    onPinSelect(cb) {
+      cityPins.onSelect(cb);
+    },
+    react(kind: ReactionKind) {
+      avatar.react?.(kind);
+    },
+    setLang(nextLang) {
+      cityPins.setLang(nextLang);
+      resetBtn.textContent = translate(nextLang, 'stage.resetView');
+    },
     dispose() {
       if (disposed) return;
       disposed = true;
@@ -625,6 +693,7 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
       avatar.dispose();
       guide.dispose();
       spotRings.dispose();
+      cityPins.dispose();
       px.dispose();
       container.classList.remove('ml-stage3d', 'ml-stage3d--walk', 'ml-stage3d--orbiting');
     },

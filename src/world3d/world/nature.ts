@@ -39,8 +39,8 @@ function bench(ctx: Ctx, x: number, z: number): void {
 
 export function buildPark(ctx: Ctx): void {
   const reach = Math.min(8.5, ctx.ext.z1) + 1.3;
-  panel(ctx.L.solid, 'y', [-2.5, 0.025, -1.3 + reach / 2], 1.1, reach, 0xc9d3e6, { density: 24, thick: 0.01 });
-  panel(ctx.L.solid, 'y', [-2.5, 0.025, 3.6], 6, 1.0, 0xc9d3e6, { density: 24, thick: 0.01 });
+  panel(ctx.L.solid, 'y', [-2.5, 0.045, -1.3 + reach / 2], 1.1, reach, 0xc9d3e6, { density: 24, thick: 0.01, depthBias: 0.05 });
+  panel(ctx.L.solid, 'y', [-2.5, 0.055, 3.6], 6, 1.0, 0xc9d3e6, { density: 24, thick: 0.01, depthBias: 0.08 });
   const spots: [number, number, number][] = [[-5.4, 0.2, 1.1], [-5.2, 5.6, 1.25], [-0.2, 0.4, 1], [0.6, 4.2, 1.2], [-4.2, 7.4, 0.9], [-0.6, 7.5, 1], [-3.8, 2.2, 0.85], [0.4, 6.4, 0.9]];
   spots.filter(([, z]) => z < ctx.ext.z1 - 0.5).forEach(([x, z, s]) => tree(ctx, x, z, s));
   if (ctx.ext.z1 > 5) bench(ctx, -4.2, 4.6);

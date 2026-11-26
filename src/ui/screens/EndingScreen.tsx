@@ -1,13 +1,14 @@
 import { useMemo, useState, type CSSProperties } from 'react';
 import { MOMENTS } from '../../data/endings';
 import { buildEnding, type Moment } from '../../engine/endings';
-import { buildFinancialMbti, type MbtiAxis } from '../../engine/mbti';
+import { buildHexReport, type HexAxisRead } from '../../engine/hexReport';
 import type { GameState, Goal } from '../../engine/types';
 import { NetWorthChart } from '../components/NetWorthChart';
 import { PixelIcon } from '../components/PixelIcon';
 import { Line, Receipt } from '../components/Receipt';
-import { ICONS } from '../components/sprites';
+import { ICONS, QUALITY_ICONS } from '../components/sprites';
 import { money } from '../format';
+import { HexRadar } from '../hex/HexRadar';
 import { useI18n } from '../i18nContext';
 import { drawShareCard } from '../shareCard';
 import { textVars } from './CardScreen';
@@ -50,10 +51,9 @@ function formatSerial(digits: string): string {
 function barcodeBars(digits: string): { x: number; w: number }[] {
   const bars: { x: number; w: number }[] = [];
   let cursor = 8;
-  // Left guard bars
   bars.push({ x: cursor, w: 3 }, { x: cursor + 6, w: 3 });
   cursor += 14;
-  for (let i = 0; i < digits.length; i++) {
+  for (let i = 0; i < digits.length; i += 1) {
     const d = digits.charCodeAt(i) - 48;
     const w1 = 2 + (d % 3);
     const gap1 = 2 + ((d >> 1) % 2);
@@ -64,63 +64,58 @@ function barcodeBars(digits: string): { x: number; w: number }[] {
     if (cursor + w2 <= 216) bars.push({ x: cursor, w: w2 });
     cursor += w2 + gap2;
   }
-  // Right guard bars
   bars.push({ x: 222, w: 3 }, { x: 228, w: 3 });
   return bars;
 }
 
-function AxisRow({ axis, index }: { axis: MbtiAxis; index: number }) {
+function HexAxisRow({ axis, index }: { axis: HexAxisRead; index: number }) {
   const { t } = useI18n();
-  const leftWins = axis.winner === axis.leftCode;
-  const winPct = leftWins ? axis.leftPct : axis.rightPct;
+  const deltaText = axis.delta > 0 ? `+${axis.delta}` : `${axis.delta}`;
+  const deltaTone = axis.delta > 0 ? 'up' : axis.delta < 0 ? 'down' : 'flat';
   const fillStyle = {
-    '--fill-w': `calc(${winPct}% - 4px)`,
-    '--bar-delay': `${220 + index * 65}ms`,
+    '--fill-w': `${Math.max(4, axis.score)}%`,
+    '--bar-delay': `${180 + index * 55}ms`,
   } as CSSProperties;
 
   return (
-    <div className="ml-mbti-axis">
-      <div className="ml-mbti-axis__meta">
-        <span className={`ml-mbti-axis__pole${leftWins ? ' ml-mbti-axis__pole--win' : ''}`}>
-          <span className="ml-mbti-axis__code">{axis.leftCode}</span>
-          <span>{t(`mbti.pole.${axis.leftCode}`)}</span>
+    <div className="ml-hexr-axis" data-quality={axis.quality}>
+      <div className="ml-hexr-axis__head">
+        <span className="ml-hexr-axis__name">
+          <PixelIcon sprite={QUALITY_ICONS[axis.quality]} scale={2} />
+          <span>{t(`hex.q.${axis.quality}`)}</span>
         </span>
-        <span className="ml-mbti-axis__pct">{winPct}% {axis.winner}</span>
-        <span className={`ml-mbti-axis__pole${!leftWins ? ' ml-mbti-axis__pole--win' : ''}`}>
-          <span>{t(`mbti.pole.${axis.rightCode}`)}</span>
-          <span className="ml-mbti-axis__code">{axis.rightCode}</span>
+        <span className="ml-hexr-axis__stats">
+          <span className={`ml-hexr-axis__delta ml-hexr-axis__delta--${deltaTone}`}>{deltaText}</span>
+          <span className="ml-hexr-axis__tier" data-tier={axis.tier}>{t(`hexr.tier.${axis.tier}`)}</span>
+          <strong className="ml-hexr-axis__score">{axis.score}</strong>
         </span>
       </div>
-      <div className="ml-mbti-bar" role="img" aria-label={`${t(`mbti.axis.${axis.id}`)}: ${winPct}% ${t(`mbti.pole.${axis.winner}`)}`}>
-        <span className="ml-mbti-bar__mid" aria-hidden="true" />
-        <span
-          className={`ml-mbti-bar__fill ${leftWins ? 'ml-mbti-bar__fill--left' : 'ml-mbti-bar__fill--right'}`}
-          data-pole={axis.winner}
-          style={fillStyle}
-        />
+      <div className="ml-hexr-bar" role="meter" aria-label={t(`hex.q.${axis.quality}`)} aria-valuemin={0} aria-valuemax={100} aria-valuenow={axis.score}>
+        <span className="ml-hexr-bar__fill" data-quality={axis.quality} style={fillStyle} />
       </div>
+      <p className="ml-hexr-axis__note">{t(`hexr.dim.${axis.quality}.${axis.tier}`)}</p>
     </div>
   );
 }
 
-/** Animated MBTI-style thermal receipt; the full life audit folds out underneath. */
+/** Animated 6-Axis Life Hexagon thermal receipt; full life audit folds out underneath. */
 export function EndingScreen({ state, goal, onAgain }: { state: GameState; goal: Goal; onAgain: () => void }) {
   const { t, lang } = useI18n();
   const fill = useFill();
   const ending = useMemo(() => buildEnding(state, goal), [state, goal]);
-  const mbti = useMemo(() => buildFinancialMbti(state, ending.stats), [state, ending.stats]);
+  const report = useMemo(() => buildHexReport(state, ending.stats), [state, ending.stats]);
   const [copied, setCopied] = useState(false);
   const [shareError, setShareError] = useState(false);
 
   const st = ending.stats;
   const labelName = t(`label.${ending.label}`);
-  const mbtiName = t(`mbti.type.${mbti.code}.name`);
-  const mbtiMotto = t(`mbti.type.${mbti.code}.motto`);
-  const partnerName = t(`mbti.type.${mbti.partnerCode}.name`);
-  const partnerMotto = t(`mbti.type.${mbti.partnerCode}.motto`);
-  const serialFull = formatSerial(mbti.barcodeDigits);
+  const archName = t(`hexr.arch.${report.archetype}.name`);
+  const archMotto = t(`hexr.arch.${report.archetype}.motto`);
+  const partnerName = t(`hexr.arch.${report.partnerArchetype}.name`);
+  const partnerMotto = t(`hexr.arch.${report.partnerArchetype}.motto`);
+  const serialFull = formatSerial(report.barcodeDigits);
   const serialShort = serialFull.slice(0, 9);
-  const bars = useMemo(() => barcodeBars(mbti.barcodeDigits), [mbti.barcodeDigits]);
+  const bars = useMemo(() => barcodeBars(report.barcodeDigits), [report.barcodeDigits]);
 
   const top = [...ending.moments]
     .sort((a, b) => b.weight - a.weight)
@@ -131,15 +126,16 @@ export function EndingScreen({ state, goal, onAgain }: { state: GameState; goal:
     ? Math.round(((st.netWorth - st.plainNetWorth) / st.plainNetWorth) * 100)
     : 0;
   const vsPlainText = plainDiffPct >= 2
-    ? t('mbti.scorecard.vsPlainUp', { pct: plainDiffPct })
+    ? t('hexr.scorecard.vsPlainUp', { pct: plainDiffPct })
     : plainDiffPct <= -2
-      ? t('mbti.scorecard.vsPlainDown', { pct: Math.abs(plainDiffPct) })
-      : t('mbti.scorecard.vsPlainEven');
+      ? t('hexr.scorecard.vsPlainDown', { pct: Math.abs(plainDiffPct) })
+      : t('hexr.scorecard.vsPlainEven');
   const vsPlainTone = plainDiffPct >= 2 ? 'up' : plainDiffPct <= -2 ? 'down' : 'even';
 
   async function share() {
-    const text = `${t('share.text', { label: `${mbti.code} ${mbtiName} · ${labelName}`, netWorth: money(st.netWorth, lang, true) })}\n${window.location.origin}`;
+    const text = `${t('share.text', { label: `${archName} · ${labelName}`, netWorth: money(st.netWorth, lang, true) })}\n${window.location.origin}`;
     try {
+      const hexLabels = Object.fromEntries(report.axes.map((a) => [a.quality, t(`hex.q.${a.quality}`)])) as Record<HexAxisRead['quality'], string>;
       const blob = await drawShareCard({
         title: t('ending.title'),
         ages: t('ending.age'),
@@ -149,37 +145,27 @@ export function EndingScreen({ state, goal, onAgain }: { state: GameState; goal:
         netWorth: money(st.netWorth, lang),
         goal: fill(ending.goal.key, ending.goal.vars),
         footer: t('app.disclaimer'),
-        mbtiCode: mbti.code,
-        mbtiTitle: mbtiName,
-        rarity: t('mbti.header.rarity', { pct: mbti.rarityPct }),
-        grade: t('mbti.header.grade', { grade: mbti.grade }),
-        axes: mbti.axes.map((a) => ({
-          leftCode: a.leftCode,
-          rightCode: a.rightCode,
-          leftLabel: t(`mbti.pole.${a.leftCode}`),
-          rightLabel: t(`mbti.pole.${a.rightCode}`),
-          leftPct: a.leftPct,
-          rightPct: a.rightPct,
-          winner: a.winner,
-        })),
-        barcodeDigits: mbti.barcodeDigits,
+        archetypeName: archName,
+        areaScore: t('hexr.header.area', { score: report.overallScore }),
+        rarity: t('hexr.header.rarity', { pct: report.rarityPct }),
+        grade: t('hexr.header.grade', { grade: report.grade }),
+        hexValues: report.finalQ,
+        hexLabels,
+        barcodeDigits: report.barcodeDigits,
       }, lang);
       const files = [new File([blob], 'life-receipt.png', { type: 'image/png' })];
       if (navigator.canShare?.({ files })) await navigator.share({ files, text });
       else {
-        // desktop: save the picture and copy the caption
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = 'life-receipt.png';
         a.click();
-        // revoking straight away can cancel the download in some browsers
         setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
         await navigator.clipboard?.writeText(text).catch(() => undefined);
         setCopied(true);
       }
       setShareError(false);
     } catch (e) {
-      // the user closing the share sheet is not an error worth showing
       if (!(e instanceof DOMException && e.name === 'AbortError')) setShareError(true);
     }
   }
@@ -189,73 +175,71 @@ export function EndingScreen({ state, goal, onAgain }: { state: GameState; goal:
       {/* 1. Receipt Header Tape */}
       <header className="ml-ending__sec ml-ending__tape" style={{ '--sec-delay': '0ms' } as CSSProperties}>
         <div className="ml-ending__tape-top">
-          <span className="ml-ending__brand">{t('mbti.header.brand')}</span>
+          <span className="ml-ending__brand">{t('hexr.header.brand')}</span>
           <div className="ml-ending__badges">
-            <span className="ml-ending__pill">{t('mbti.header.rarity', { pct: mbti.rarityPct })}</span>
-            <span className="ml-ending__pill ml-ending__pill--grade" data-grade={mbti.grade}>
-              {t('mbti.header.grade', { grade: mbti.grade })}
+            <span className="ml-ending__pill">{t('hexr.header.area', { score: report.overallScore })}</span>
+            <span className="ml-ending__pill">{t('hexr.header.rarity', { pct: report.rarityPct })}</span>
+            <span className="ml-ending__pill ml-ending__pill--grade" data-grade={report.grade}>
+              {t('hexr.header.grade', { grade: report.grade })}
             </span>
           </div>
         </div>
         <div className="ml-ending__tape-sub">
-          <span className="ml-ending__serial">{t('mbti.header.serial', { serial: serialShort })}</span>
-          <span className="ml-ending__grade-note">{t(`mbti.grade.${mbti.grade}`)}</span>
+          <span className="ml-ending__serial">{t('hexr.header.serial', { serial: serialShort })}</span>
+          <span className="ml-ending__grade-note">{t(`hexr.grade.${report.grade}`)}</span>
         </div>
       </header>
 
-      {/* 2. MBTI Hero Card */}
-      <section className="ml-ending__sec ml-mbti-hero" style={{ '--sec-delay': '70ms' } as CSSProperties}>
-        <p className="ml-mbti-hero__eyebrow">{t('mbti.hero.eyebrow')}</p>
-        <div className="ml-mbti-tiles" aria-label={mbti.code}>
-          {[...mbti.code].map((ch, idx) => (
-            <span
-              key={`${ch}-${idx}`}
-              className="ml-mbti-tile"
-              data-pole={ch}
-              style={{ '--tile-delay': `${110 + idx * 55}ms` } as CSSProperties}
-            >
-              {ch}
-            </span>
-          ))}
+      {/* 2. Life Hexagon Hero Card */}
+      <section className="ml-ending__sec ml-hexr-hero" style={{ '--sec-delay': '70ms' } as CSSProperties}>
+        <p className="ml-hexr-hero__eyebrow">{t('hexr.hero.eyebrow')}</p>
+        <div className="ml-hexr-hero__stage">
+          <HexRadar values={report.finalQ} previous={report.startQ} size={360} max={320} />
         </div>
-        <h2 className="ml-mbti-hero__name">{mbtiName}</h2>
+        <div className="ml-hexr-hero__chips">
+          <span className="ml-hexr-chip">{t('hexr.hero.symmetry', { pct: report.symmetryPct })}</span>
+          <span className="ml-hexr-chip">
+            {t('hexr.hero.peaks', { a: t(`hex.q.${report.topTwo[0]}`), b: t(`hex.q.${report.topTwo[1]}`) })}
+          </span>
+        </div>
+        <h2 className="ml-hexr-hero__name">{archName}</h2>
         <p className="ml-ending__label" data-testid="ending-label" data-label={ending.label}>{labelName}</p>
-        <p className="ml-mbti-hero__motto">{mbtiMotto}</p>
+        <p className="ml-hexr-hero__motto">{archMotto}</p>
         <p className="ml-ending__desc">{t(`label.${ending.label}.desc`)}</p>
       </section>
 
-      {/* 3. 4-Axis Financial DNA Spectrum Bars */}
-      <section className="ml-ending__sec ml-mbti-axes" style={{ '--sec-delay': '140ms' } as CSSProperties}>
-        <h3 className="ml-ending__sec-head">{t('mbti.axes.title')}</h3>
-        <div className="ml-mbti-axes__list">
-          {mbti.axes.map((axis, i) => (
-            <AxisRow key={axis.id} axis={axis} index={i} />
+      {/* 3. 6-Dimension Hexagon Breakdown */}
+      <section className="ml-ending__sec ml-hexr-axes" style={{ '--sec-delay': '140ms' } as CSSProperties}>
+        <h3 className="ml-ending__sec-head">{t('hexr.axes.title')}</h3>
+        <div className="ml-hexr-axes__list">
+          {report.axes.map((axis, i) => (
+            <HexAxisRow key={axis.quality} axis={axis} index={i} />
           ))}
         </div>
       </section>
 
       {/* 4. Strengths & Blind Spots Panel */}
       <section className="ml-ending__sec" style={{ '--sec-delay': '210ms' } as CSSProperties}>
-        <div className="ml-mbti-grid">
-          <div className="ml-mbti-box ml-mbti-box--strengths">
-            <h3 className="ml-mbti-box__title">
-              <span className="ml-mbti-box__mark" aria-hidden="true">+</span>
-              <span>{t('mbti.strengths.title')}</span>
+        <div className="ml-hexr-grid">
+          <div className="ml-hexr-box ml-hexr-box--strengths">
+            <h3 className="ml-hexr-box__title">
+              <span className="ml-hexr-box__mark" aria-hidden="true">+</span>
+              <span>{t('hexr.strengths.title')}</span>
             </h3>
-            <ul className="ml-mbti-box__list">
-              <li>{t(`mbti.type.${mbti.code}.s1`)}</li>
-              <li>{t(`mbti.type.${mbti.code}.s2`)}</li>
-              <li>{t(`mbti.type.${mbti.code}.s3`)}</li>
+            <ul className="ml-hexr-box__list">
+              <li>{t(`hexr.arch.${report.archetype}.s1`)}</li>
+              <li>{t(`hexr.arch.${report.archetype}.s2`)}</li>
+              <li>{t(`hexr.arch.${report.archetype}.s3`)}</li>
             </ul>
           </div>
-          <div className="ml-mbti-box ml-mbti-box--blindspots">
-            <h3 className="ml-mbti-box__title">
-              <span className="ml-mbti-box__mark" aria-hidden="true">!</span>
-              <span>{t('mbti.blindspots.title')}</span>
+          <div className="ml-hexr-box ml-hexr-box--blindspots">
+            <h3 className="ml-hexr-box__title">
+              <span className="ml-hexr-box__mark" aria-hidden="true">!</span>
+              <span>{t('hexr.blindspots.title')}</span>
             </h3>
-            <ul className="ml-mbti-box__list">
-              <li>{t(`mbti.type.${mbti.code}.b1`)}</li>
-              <li>{t(`mbti.type.${mbti.code}.b2`)}</li>
+            <ul className="ml-hexr-box__list">
+              <li>{t(`hexr.arch.${report.archetype}.b1`)}</li>
+              <li>{t(`hexr.arch.${report.archetype}.b2`)}</li>
             </ul>
           </div>
         </div>
@@ -263,7 +247,7 @@ export function EndingScreen({ state, goal, onAgain }: { state: GameState; goal:
 
       {/* 5. Financial Scorecard + Goal Verdict */}
       <section className="ml-ending__sec ml-ending__scorecard" style={{ '--sec-delay': '280ms' } as CSSProperties}>
-        <h3 className="ml-ending__sec-head">{t('mbti.scorecard.title')}</h3>
+        <h3 className="ml-ending__sec-head">{t('hexr.scorecard.title')}</h3>
         <Line icon={ICONS.gem} label={t('ending.netWorth')} value={money(st.netWorth, lang)} strong />
         <div className="ml-ending__vs-row">
           <span className={`ml-chip ml-chip--${vsPlainTone}`}>{vsPlainText}</span>
@@ -271,7 +255,7 @@ export function EndingScreen({ state, goal, onAgain }: { state: GameState; goal:
         <div className="ml-score-strip">
           <div className="ml-score-cell">
             <PixelIcon sprite={ICONS.coin} scale={2} />
-            <span className="ml-score-cell__label">{t('mbti.scorecard.peakSalary')}</span>
+            <span className="ml-score-cell__label">{t('hexr.scorecard.peakSalary')}</span>
             <span className="ml-score-cell__val">{money(st.peakSalary, lang, true)}</span>
           </div>
           <div className="ml-score-cell">
@@ -313,16 +297,12 @@ export function EndingScreen({ state, goal, onAgain }: { state: GameState; goal:
 
         <div className="ml-partner-card">
           <div className="ml-partner-card__head">
-            <span className="ml-partner-card__eyebrow">{t('mbti.partner.title')}</span>
-            <div className="ml-partner-card__tiles" aria-label={mbti.partnerCode}>
-              {[...mbti.partnerCode].map((ch, idx) => (
-                <span key={`${ch}-${idx}`} className="ml-mbti-tile ml-mbti-tile--sm" data-pole={ch}>{ch}</span>
-              ))}
-            </div>
+            <span className="ml-partner-card__eyebrow">{t('hexr.partner.title')}</span>
+            <span className="ml-ending__pill">{t(`hex.q.${report.growthEdge}`)} ↑</span>
           </div>
           <p className="ml-partner-card__name">{partnerName}</p>
           <p className="ml-partner-card__motto">{partnerMotto}</p>
-          <p className="ml-partner-card__hint">{t('mbti.partner.hint')}</p>
+          <p className="ml-partner-card__hint">{t('hexr.partner.hint')}</p>
         </div>
 
         {ending.moments.length > top.length && (
@@ -351,7 +331,7 @@ export function EndingScreen({ state, goal, onAgain }: { state: GameState; goal:
             <rect key={idx} x={b.x} y={2} width={b.w} height={36} fill="var(--ml-ink)" />
           ))}
         </svg>
-        <p className="ml-barcode__digits">{t('mbti.barcode.label', { serial: serialFull, code: mbti.code })}</p>
+        <p className="ml-barcode__digits">{t('hexr.barcode.label', { serial: serialFull, score: report.overallScore })}</p>
       </footer>
       <p className="ml-fine">{t('app.disclaimer')}</p>
     </Receipt>

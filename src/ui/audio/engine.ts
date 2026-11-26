@@ -8,7 +8,7 @@ export interface Bus { ctx: AudioContext; sfx: GainNode; music: GainNode; master
 
 const MASTER_DB = -3;
 const SFX_DB = -6;
-const MUSIC_DB = -30; // the ambient pad is felt more than heard
+const MUSIC_DB = -16; // warm upbeat-chill groove, audible without fighting SFX or voice
 let bus: Bus | null = null;
 let unlocked = false;
 
@@ -19,6 +19,10 @@ function build(): Bus | null {
   const master = ctx.createGain();
   const sfx = ctx.createGain();
   const music = ctx.createGain();
+  const musicTone = ctx.createBiquadFilter(); // gentle warm rolloff for cozy lo-fi city-pop character
+  musicTone.type = 'lowpass';
+  musicTone.frequency.value = 4600;
+  musicTone.Q.value = 0.6;
   const limiter = ctx.createDynamicsCompressor(); // near-brickwall: stacked sounds never clip
   limiter.threshold.value = -8;
   limiter.knee.value = 0;
@@ -29,7 +33,8 @@ function build(): Bus | null {
   music.gain.value = dbToGain(MUSIC_DB);
   master.gain.value = isMuted() ? 0 : dbToGain(MASTER_DB);
   sfx.connect(master);
-  music.connect(master);
+  music.connect(musicTone);
+  musicTone.connect(master);
   master.connect(limiter);
   limiter.connect(ctx.destination);
   const noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
