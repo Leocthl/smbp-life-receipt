@@ -2,13 +2,26 @@ import * as THREE from 'three';
 import { translate, type Lang } from '../i18n';
 import { buildAvatar } from './avatar';
 import type { AvatarHandle, Spot, SpotId, StageApi, WorldHandle } from './contracts';
-import { createControls, resolvePosition, type Walk } from './controls';
+import {
+  clampPitch,
+  clampPitchOffset,
+  clampZoom,
+  createControls,
+  DEFAULT_PITCH,
+  isLoopingScope,
+  isRoomLocked,
+  normalizeAngle,
+  resolvePosition,
+  resolvePositionWithWrap,
+  type Walk,
+} from './controls';
 import { worldKey, type WorldDescriptor } from './descriptor';
 import type { GaussianMesh } from './gaussian';
 import { camAxes, fitViewHeight, freeRect, type P3 } from './frameFit';
 import { createJoystick } from './joystick';
 import { createDioramaCamera, createPixelRenderer, srgb } from './pixel';
 import { scopeHalf, scopeMargin } from './scopeFit';
+import { createSpotRings } from './spotRings';
 import { createGuide } from './walkGuide';
 import { buildWorld } from './world';
 import './stage.css';
@@ -81,6 +94,16 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
   scene.background = new THREE.Color(world.sky);
   scene.add(world.group, avatar.group);
   const guide = createGuide(container, scene, lang);
+  const spotRings = createSpotRings(scene);
+  spotRings.setSpots(world.spots);
+
+  const resetBtn = document.createElement('button');
+  resetBtn.type = 'button';
+  resetBtn.className = 'ml-btn ml-stage-reset';
+  resetBtn.dataset.testid = 'orbit-reset';
+  resetBtn.textContent = translate(lang, 'stage.resetView');
+  resetBtn.hidden = true;
+  container.appendChild(resetBtn);
 
   const spawnFor = (scope: WorldDescriptor['scope']): Walk => (scope === 'room' || scope === 'home' ? { x: 0, z: 0 } : OUTDOOR_SPAWN);
   let pos: Walk = spawnFor(initial.scope);
@@ -89,11 +112,26 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
   let tap: Walk | null = null;
   let goal: Goal | null = null;
   let enabled = true;
+  let freeRoam = false;
+  let spotEnterCb: ((spot: Spot) => void) | null = null;
+  let insideSpotId: SpotId | null = null;
   let hold = false;
   let revealAt = 0;
   let revealLen = REVEAL_SECONDS;
   let revealOnly: readonly GaussianMesh[] | null = null; // null: every mesh grows in
   let framing: Frame | null = null; // where the camera is allowed to follow the avatar
+  let baseYaw = DEFAULT_YAW;
+  let frameVh = cam.state.viewHeight; // the framing's view height (the fit below may zoom out past it)
+  let userYaw = 0;
+  let userPitch = 0;
+  let userZoom = 1;
+  let velYaw = 0;
+  let velPitch = 0;
+  let orbitDragging = false;
+  let orbitResetting = false;
+  let mouseActive = false;
+  const cursorTarget = { x: 0, y: 0 };
+  const cursorNow = { x: 0, y: 0 };
   let frameFrom: Frame = snapshot();
   let frameTo: Frame = snapshot();
   let frameAt = -Infinity;
@@ -103,7 +141,6 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
   let disposed = false;
   let tasks: Task[] = [];
   let frameDone = false; // the framing tween has arrived; from then on only follow() may move the camera
-  let frameVh = cam.state.viewHeight; // the framing's view height (the fit below may zoom out past it)
   let fitNow = 0, contentHalf = { w: 0, h: 0 }; // zoom needed to fit the scope in the free area: where it is / what the scope reaches from the camera's target
   let walkFrame = false; // the camera is framing hero and place for a walk, not the scope
   let hopAt = -Infinity;
@@ -113,8 +150,42 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
   let sheetBottom = 0, hudTop = 0, insetNow = 0, dockInset = 0, dockNow = 0;
 
   function snapshot(): Frame {
-    return { vh: cam.state.viewHeight, x: cam.target.x, y: cam.target.y, z: cam.target.z, yaw: cam.state.yaw };
+    return { vh: frameVh || cam.state.viewHeight, x: cam.target.x, y: cam.target.y, z: cam.target.z, yaw: baseYaw };
   }
+
+  function syncWalkClass() {
+    container.classList.toggle('ml-stage3d--walk', enabled && !isRoomLocked(d.scope));
+  }
+  syncWalkClass();
+
+  function triggerResetOrbit() {
+    velYaw = 0;
+    velPitch = 0;
+    if (reduced) {
+      userYaw = 0;
+      userPitch = 0;
+      userZoom = 1;
+      orbitResetting = false;
+      return;
+    }
+    orbitResetting = true;
+  }
+  resetBtn.addEventListener('click', triggerResetOrbit);
+
+  const onMouseMove = (e: PointerEvent) => {
+    if (e.pointerType !== 'mouse') return;
+    const w = Math.max(1, container.clientWidth || window.innerWidth);
+    const h = Math.max(1, container.clientHeight || window.innerHeight);
+    mouseActive = true;
+    cursorTarget.x = Math.max(-1, Math.min(1, (e.clientX / w) * 2 - 1));
+    cursorTarget.y = Math.max(-1, Math.min(1, -((e.clientY / h) * 2 - 1)));
+  };
+  const onMouseLeave = () => {
+    cursorTarget.x = 0;
+    cursorTarget.y = 0;
+  };
+  window.addEventListener('pointermove', onMouseMove, { passive: true });
+  document.documentElement.addEventListener('pointerleave', onMouseLeave, { passive: true });
 
   const ray = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
@@ -128,7 +199,35 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
   }
 
   const joy = createJoystick(container, translate(lang, 'stage.joy.label'));
-  const ctl = createControls({ container, joystick: joy, groundAt, onTap: (p) => { tap = p; } });
+  const ctl = createControls({
+    container,
+    joystick: joy,
+    groundAt,
+    onTap: (p) => { tap = p; },
+    onOrbitStart: () => {
+      orbitDragging = true;
+      orbitResetting = false;
+      velYaw = 0;
+      velPitch = 0;
+      container.classList.add('ml-stage3d--orbiting');
+    },
+    onOrbitDelta: (dYaw, dPitch) => {
+      if (hold) return;
+      userYaw = normalizeAngle(userYaw + dYaw);
+      userPitch = clampPitchOffset(userPitch + dPitch, DEFAULT_PITCH);
+    },
+    onOrbitEnd: (vy, vp) => {
+      orbitDragging = false;
+      velYaw = vy;
+      velPitch = vp;
+      container.classList.remove('ml-stage3d--orbiting');
+    },
+    onZoomDelta: (factor) => {
+      if (hold) return;
+      orbitResetting = false;
+      userZoom = clampZoom(userZoom * factor);
+    },
+  });
 
   /** Walk toward the tapped point; returns the step for this frame, or null when there is nothing to walk to. */
   function stepTowardTap(dt: number): Walk | null {
@@ -138,9 +237,9 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
     return { x: (dx / dist) * reach, z: (dz / dist) * reach };
   }
 
-  /** Keys or joystick override a tap. */
+  /** Keys or joystick override a tap. Age-18 bedroom stays stationary while still allowing 360° orbit. */
   function input(dt: number): Walk | null {
-    if (!enabled) return null;
+    if (!enabled || isRoomLocked(d.scope)) return null;
     const dir = ctl.walk(cam.state.yaw);
     if (dir.x !== 0 || dir.z !== 0) {
       tap = null;
@@ -209,7 +308,7 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
     if (hold || frameDone) return false;
     const k = reduced ? 1 : smooth(clamp01((t - frameAt) / FRAME_SECONDS));
     frameVh = lerp(frameFrom.vh, frameTo.vh, k);
-    cam.state.yaw = lerp(frameFrom.yaw, frameTo.yaw, k);
+    baseYaw = lerp(frameFrom.yaw, frameTo.yaw, k);
     cam.target.set(lerp(frameFrom.x, frameTo.x, k), lerp(frameFrom.y, frameTo.y, k), lerp(frameFrom.z, frameTo.z, k));
     frameDone = k >= 1;
     return !frameDone;
@@ -233,7 +332,6 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
     if (hold) return;
     const want = walkFrame ? 0 : fitViewHeight({ w: boxW, h: boxH }, { top: hudTop, bottom: sheetBottom + hidden(), right: dockInset }, contentHalf, scopeMargin(d.scope));
     fitNow = reduced ? want : approach(fitNow, want, 1 - Math.exp(-dt * INSET_RATE));
-    cam.state.viewHeight = Math.max(frameVh, fitNow);
   }
 
   /** Moves a value toward where it is going; the last sliver is closed in one step so an idle camera is perfectly still. */
@@ -241,12 +339,49 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
   /** How far past the dead zone a move is, signed and capped at the leash. */
   const beyond = (d: number, dead: number, leash: number) => Math.sign(d) * Math.min(Math.max(0, Math.abs(d) - dead), leash - dead);
 
+  /** Smoothly applies user orbit inertia, reset springs, zoom, and desktop-mouse-only parallax without breaking idle stillness. */
+  function updateOrbitAndParallax(dt: number) {
+    const ck = 1 - Math.exp(-dt * 8);
+    cursorNow.x = reduced ? 0 : approach(cursorNow.x, cursorTarget.x, ck);
+    cursorNow.y = reduced ? 0 : approach(cursorNow.y, cursorTarget.y, ck);
+    if (Math.abs(cursorNow.x - cursorTarget.x) < 1e-4) cursorNow.x = cursorTarget.x;
+    if (Math.abs(cursorNow.y - cursorTarget.y) < 1e-4) cursorNow.y = cursorTarget.y;
+
+    if (!hold) {
+      if (orbitResetting) {
+        const rk = 1 - Math.exp(-dt * 9);
+        userYaw = Math.abs(userYaw) < 1e-3 ? 0 : userYaw * (1 - rk);
+        userPitch = Math.abs(userPitch) < 1e-3 ? 0 : userPitch * (1 - rk);
+        userZoom = Math.abs(userZoom - 1) < 1e-3 ? 1 : userZoom + (1 - userZoom) * rk;
+        if (userYaw === 0 && userPitch === 0 && userZoom === 1) orbitResetting = false;
+      } else if (!orbitDragging) {
+        if (velYaw !== 0 || velPitch !== 0) {
+          userYaw = normalizeAngle(userYaw + velYaw * dt);
+          userPitch = clampPitchOffset(userPitch + velPitch * dt, DEFAULT_PITCH);
+          const decay = Math.exp(-dt * 7);
+          velYaw = Math.abs(velYaw * decay) < 1e-3 ? 0 : velYaw * decay;
+          velPitch = Math.abs(velPitch * decay) < 1e-3 ? 0 : velPitch * decay;
+        }
+      }
+      const pxOff = mouseActive && !reduced ? cursorNow.x * 0.032 : 0;
+      const pyOff = mouseActive && !reduced ? cursorNow.y * 0.015 : 0;
+      cam.state.yaw = baseYaw + userYaw + pxOff;
+      cam.state.pitch = clampPitch(DEFAULT_PITCH + userPitch + pyOff);
+      cam.state.viewHeight = Math.max(frameVh, fitNow) * userZoom;
+    }
+
+    const moved = !hold && (Math.abs(userYaw) > 0.08 || Math.abs(userPitch) > 0.06 || Math.abs(userZoom - 1) > 0.06);
+    resetBtn.hidden = !moved;
+  }
+
   /** The camera shadows the avatar only once it leaves a dead zone round the framing's centre, and never by more than the leash. */
   function follow(dt: number) {
     if (hold) return;
     const k = 1 - Math.exp(-dt * CAM_RATE), b = world.bounds;
     const cx = framing?.x ?? 0, cz = framing?.z ?? 0;
-    const leash = framing ? framing.vh * LEASH : Infinity, dead = framing ? framing.vh * DEADZONE : 0;
+    const loopingFree = freeRoam && isLoopingScope(d.scope);
+    const leash = loopingFree ? b : framing ? framing.vh * LEASH : Infinity;
+    const dead = loopingFree ? 0.5 : framing ? framing.vh * DEADZONE : 0;
     const tx = within(cx + beyond(pos.x - cx, dead, leash), 0, b), tz = within(cz + beyond(pos.z - cz, dead, leash), 0, b);
     cam.target.x = approach(cam.target.x, tx, k);
     cam.target.z = approach(cam.target.z, tz, k);
@@ -271,14 +406,43 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
 
   /** A tap walks in a straight line; when that runs head-on into a lamp post or a tree it would stand still, so sidestep until it is clear. */
   function stepAround(move: Walk): Walk {
-    const next = resolvePosition({ x: pos.x + move.x, z: pos.z + move.z }, world), want = Math.hypot(move.x, move.z);
-    if (!tap || want < 1e-6 || Math.hypot(next.x - pos.x, next.z - pos.z) >= 0.5 * want) return next;
+    const wrap = isLoopingScope(d.scope);
+    const step = (mx: number, mz: number) => resolvePositionWithWrap({ x: pos.x + mx, z: pos.z + mz }, world, wrap);
+    const applyWrap = (res: ReturnType<typeof resolvePositionWithWrap>) => {
+      if (res.wrapX !== 0 || res.wrapZ !== 0) {
+        cam.target.x += res.wrapX;
+        cam.target.z += res.wrapZ;
+        if (tap) tap = { x: tap.x + res.wrapX, z: tap.z + res.wrapZ };
+      }
+      return res.pos;
+    };
+    const first = step(move.x, move.z), want = Math.hypot(move.x, move.z);
+    if (!tap || want < 1e-6 || Math.hypot(first.pos.x - pos.x - first.wrapX, first.pos.z - pos.z - first.wrapZ) >= 0.5 * want) {
+      return applyWrap(first);
+    }
     for (const a of SIDESTEPS) {
       const cos = Math.cos(a), sin = Math.sin(a);
-      const cand = resolvePosition({ x: pos.x + move.x * cos - move.z * sin, z: pos.z + move.x * sin + move.z * cos }, world);
-      if (Math.hypot(cand.x - pos.x, cand.z - pos.z) >= 0.6 * want) return cand;
+      const cand = step(move.x * cos - move.z * sin, move.x * sin + move.z * cos);
+      if (Math.hypot(cand.pos.x - pos.x - cand.wrapX, cand.pos.z - pos.z - cand.wrapZ) >= 0.6 * want) return applyWrap(cand);
     }
-    return next;
+    return applyWrap(first);
+  }
+
+  function checkFreeRoamSpot() {
+    if (!freeRoam || goal || !spotEnterCb || !isLoopingScope(d.scope)) return;
+    if (insideSpotId) {
+      const cur = world.spots.find((sp) => sp.id === insideSpotId);
+      if (!cur || Math.hypot(pos.x - cur.x, pos.z - cur.z) > cur.r * 1.35) insideSpotId = null;
+      return;
+    }
+    for (const sp of world.spots) {
+      if (Math.hypot(pos.x - sp.x, pos.z - sp.z) <= sp.r) {
+        insideSpotId = sp.id;
+        tap = null;
+        spotEnterCb(sp);
+        break;
+      }
+    }
   }
 
   function tick(dt: number) {
@@ -294,8 +458,17 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
     avatar.group.position.set(pos.x, hopK >= 0 && hopK < 1 ? Math.sin(hopK * Math.PI) * HOP_HEIGHT : 0, pos.z);
     avatar.group.rotation.y = facing;
     checkGoal();
+    checkFreeRoamSpot();
     if (!applyFrame()) follow(dt);
     updateFit(dt);
+    updateOrbitAndParallax(dt);
+    spotRings.setVisible(freeRoam && !goal && isLoopingScope(d.scope));
+    spotRings.update(t, reduced);
+    px.uniforms.uTime.value = t;
+    px.uniforms.uYaw.value = cam.state.yaw;
+    px.uniforms.uAgeK.value = clamp01((d.age - 18) / (65 - 18));
+    px.uniforms.uIndoor.value = indoorScope(d.scope) ? 1 : 0;
+    (px.uniforms.uCursor.value as THREE.Vector2).set(mouseActive && !reduced ? cursorNow.x : 0, mouseActive && !reduced ? cursorNow.y : 0);
     cam.update(px.low.x / px.low.y, px.low.y);
     applyInset(dt);
     guide.update({ t, dt, hero: pos, cam: cam.camera, yaw: cam.state.yaw, viewHeight: cam.state.viewHeight, box: { w: boxW, h: boxH }, ins: { top: hudTop, bottom: sheetBottom + hidden(), right: dockInset } });
@@ -313,6 +486,7 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
     world.meshes.forEach((g) => prep(g, revealOnly === null || revealOnly.includes(g) ? revealK : 1));
     avatar.meshes.forEach((g) => prep(g, 1));
     guide.meshes.forEach((g) => { if (g.mesh.parent?.visible) prep(g, 1); });
+    spotRings.meshes.forEach((g) => { if (g.mesh.parent?.visible) prep(g, 1); });
   }
 
   function runTasks(dt: number) {
@@ -376,7 +550,10 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
       scene.background = new THREE.Color(world.sky);
       scene.add(world.group, avatar.group);
       avatar.setWalking(walking);
-      pos = resolvePosition(indoorScope(next.scope) !== indoorScope(prevScope) ? spawnFor(next.scope) : pos, world);
+      pos = resolvePosition(indoorScope(next.scope) !== indoorScope(prevScope) ? spawnFor(next.scope) : pos, world, isLoopingScope(next.scope));
+      spotRings.setSpots(world.spots);
+      insideSpotId = null;
+      syncWalkClass();
       if (!sameScope) tap = null; // a keepsake growing in must not stop a walk
       // same scope: swap at once and grow in only the new pieces; a new scope re-assembles the whole world
       revealOnly = sameScope ? (world.fresh ?? []) : null;
@@ -390,7 +567,7 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
     world: () => d,
     setControls(on) {
       enabled = on;
-      container.classList.toggle('ml-stage3d--walk', on);
+      syncWalkClass();
       ctl.setEnabled(on);
       if (!on) tap = null;
     },
@@ -419,6 +596,15 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
         return k >= 1;
       });
     },
+    resetOrbit: triggerResetOrbit,
+    setFreeRoam(on) {
+      freeRoam = on;
+      if (!on) insideSpotId = null;
+    },
+    onSpotEnter(cb) {
+      spotEnterCb = cb;
+      if (!cb) insideSpotId = null;
+    },
     dispose() {
       if (disposed) return;
       disposed = true;
@@ -426,6 +612,10 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
       ro.disconnect();
       window.clearTimeout(resizeTimer);
       window.removeEventListener(INSET_EVENT, onInset);
+      window.removeEventListener('pointermove', onMouseMove);
+      document.documentElement.removeEventListener('pointerleave', onMouseLeave);
+      resetBtn.removeEventListener('click', triggerResetOrbit);
+      resetBtn.remove();
       ctl.dispose();
       joy.dispose();
       cancelGoal();
@@ -434,8 +624,9 @@ export function createStage(container: HTMLElement, initial: WorldDescriptor, se
       world.dispose();
       avatar.dispose();
       guide.dispose();
+      spotRings.dispose();
       px.dispose();
-      container.classList.remove('ml-stage3d');
+      container.classList.remove('ml-stage3d', 'ml-stage3d--walk', 'ml-stage3d--orbiting');
     },
   };
 }

@@ -131,10 +131,26 @@ function skirt(ctx: Ctx): void {
   panel(s, 'x', [e.x1, -0.4, (e.z0 + e.z1) / 2], e.z1 - e.z0, 0.8, 0x6b789c, { density: 24, shade: 0.7 });
 }
 
+/** Subtle perimeter loop road ticks along the open-world wrap boundary so looping feels grounded. */
+function loopMarkers(ctx: Ctx): void {
+  if (ctx.scope !== 'block' && ctx.scope !== 'district' && ctx.scope !== 'city') return;
+  const s = ctx.L.solid, e = ctx.ext;
+  const zMax = Math.min(8.8, e.z1 - 0.4);
+  for (let x = -12; x <= 12; x += 3) {
+    panel(s, 'y', [x, 0.035, -13.1], 0.45, 0.18, 0xffd85a, { density: 40, thick: 0.01 });
+    if (zMax > 2) panel(s, 'y', [x, 0.035, zMax], 0.45, 0.18, 0x4cc3d9, { density: 40, thick: 0.01 });
+  }
+  for (let z = -12; z <= Math.floor(zMax); z += 3) {
+    panel(s, 'y', [-13.1, 0.035, z], 0.18, 0.45, 0xffd85a, { density: 40, thick: 0.01 });
+    panel(s, 'y', [13.1, 0.035, z], 0.18, 0.45, 0xffd85a, { density: 40, thick: 0.01 });
+  }
+}
+
 export function buildTerrain(ctx: Ctx): void {
   land(ctx);
   street(ctx);
   lamps(ctx);
+  loopMarkers(ctx);
   if (ctx.ext.z1 < 9) { skirt(ctx); return; }
   seawall(ctx);
   sea(ctx);

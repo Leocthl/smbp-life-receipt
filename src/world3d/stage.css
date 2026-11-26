@@ -7,9 +7,44 @@
   overflow: hidden;
   overscroll-behavior: none;
   background: #8fd3ff;
+  cursor: grab;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
+}
+
+.ml-stage3d--orbiting {
+  cursor: grabbing;
+}
+
+.ml-btn.ml-stage-reset {
+  position: absolute;
+  top: calc(104px + env(safe-area-inset-top, 0px));
+  right: 12px;
+  z-index: 4;
+  width: auto;
+  min-width: 44px;
+  min-height: 44px;
+  margin: 0;
+  padding: 8px 12px 10px;
+  font-size: 13px;
+  line-height: 1;
+  background: #fff6dc;
+  color: #1f2a44;
+  box-shadow: 0 -2px 0 0 #2b3a55, 0 2px 0 0 #2b3a55, -2px 0 0 0 #2b3a55, 2px 0 0 0 #2b3a55, inset 0 -3px 0 0 #e6d6a6;
+}
+
+.ml-stage-reset[hidden] {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .ml-btn.ml-stage-reset {
+    top: 122px;
+    left: 16px;
+    right: auto;
+    bottom: auto;
+  }
 }
 
 .ml-world__canvas {

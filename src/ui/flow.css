@@ -61,3 +61,70 @@
 @keyframes ml-flow-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes ml-flow-pop { from { transform: scale(0.96); opacity: 0; } to { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .ml-flow-walk, .ml-flow-walk__pin .ml-pix, .ml-flow-hexdim, .ml-flow-hexpanel { animation: none; } }
+
+/* Open-world free-roam entry button + floating exploration bar + unlock celebration toast */
+.ml-btn.ml-explore-btn {
+  position: fixed;
+  z-index: 4;
+  top: calc(104px + env(safe-area-inset-top));
+  left: 12px;
+  width: auto;
+  min-width: 44px;
+  min-height: 44px;
+  margin: 0;
+  padding: 8px 12px 10px;
+  font-size: 13px;
+  line-height: 1;
+  --ml-face: var(--ml-sun);
+  --ml-ledge: #e0b030;
+}
+
+.ml-free-bar {
+  position: fixed;
+  z-index: 5;
+  left: 12px;
+  right: 12px;
+  bottom: calc(152px + env(safe-area-inset-bottom));
+  max-width: 520px;
+  margin: 0 auto;
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  background: var(--ml-cream);
+  color: var(--ml-text);
+  box-shadow: var(--ml-frame), 4px 5px 0 3px var(--ml-shadow);
+}
+.ml-free-bar__title { margin: 0; font-size: 14px; font-weight: 800; line-height: 1.35; }
+.ml-free-bar__quota { margin: 2px 0 0; font-size: 12px; font-weight: 700; color: var(--ml-muted); }
+.ml-free-bar__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ml-free-bar__actions .ml-btn { margin: 0; min-height: 44px; font-size: 14px; padding: 8px 10px 10px; }
+
+.ml-unlock-toast {
+  position: fixed;
+  z-index: 7;
+  top: calc(108px + env(safe-area-inset-top));
+  left: 12px;
+  right: 12px;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 8px 14px;
+  background: var(--ml-sun);
+  color: var(--ml-ink);
+  box-shadow: var(--ml-frame), 4px 4px 0 0 var(--ml-shadow);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.4;
+  text-align: center;
+  pointer-events: none;
+  animation: ml-flow-in 220ms var(--ml-ease) both;
+}
+
+@media (pointer: fine) and (max-width: 899px) {
+  .ml-free-bar { bottom: calc(20px + env(safe-area-inset-bottom)); }
+}
+
+@media (min-width: 900px) {
+  .ml-btn.ml-explore-btn { top: auto; left: 22px; bottom: 22px; font-size: 15px; padding: 10px 16px 12px; }
+  .ml-free-bar { left: 22px; right: auto; bottom: 24px; width: 480px; max-width: none; margin: 0; }
+  .ml-unlock-toast { left: 22px; right: auto; margin: 0; max-width: 420px; }
+}

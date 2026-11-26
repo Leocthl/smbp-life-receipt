@@ -10,7 +10,19 @@ import './screens.css';
 const NOTICE_KEYS = ['auto_borrow', 'scheme_borrow', 'card_restructure', 'belt_tighten', 'went_without', 'bankrupt', 'mpf_withdrawn', 'forced_sale', 'delayed'];
 
 /** Year-end receipt: the only place the portfolio is shown unless showPortfolioLive is on. */
-export function SummaryScreen({ state, summary, onNext }: { state: GameState; summary: TurnSummary; onNext: () => void }) {
+export function SummaryScreen({
+  state,
+  summary,
+  fromAge,
+  skippedYears,
+  onNext,
+}: {
+  state: GameState;
+  summary: TurnSummary;
+  fromAge?: number;
+  skippedYears?: number;
+  onNext: () => void;
+}) {
   const { t, lang } = useI18n();
   const assets = Object.entries(summary.portfolio).filter(([, v]) => v > 0.5);
   // loans of the same kind and rate share one line (a life can hold several tranches)
@@ -31,6 +43,9 @@ export function SummaryScreen({ state, summary, onNext }: { state: GameState; su
       )}
     >
       <h2 className="ml-summary__title">{t('summary.title', { age: ageLabel(summary.age) })}</h2>
+      {skippedYears && skippedYears > 1 && fromAge !== undefined && (
+        <p className="ml-summary__chapter">{t('summary.chapter', { from: ageLabel(fromAge), to: ageLabel(summary.age), years: skippedYears })}</p>
+      )}
       <p className="ml-summary__market" data-regime={summary.regime}>
         <PixelIcon sprite={WEATHER[summary.regime]} scale={3} />
         <span>{t('summary.market', { regime: t(`regime.${summary.regime}`) })}</span>

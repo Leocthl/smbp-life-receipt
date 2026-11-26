@@ -73,5 +73,11 @@ export interface StageApi {
   animate(step: (t: number, dt: number) => boolean | void): Promise<void>;
   /** fade the pixel picture to a colour (0 = clear, 1 = solid) over ms */
   fade(to: number, ms: number, color?: number): Promise<void>;
+  /** smoothly spring the 360° user orbit, tilt, and zoom back to the default diorama framing */
+  resetOrbit(): void;
+  /** enable or disable free-roam outdoor walking without an active goTo() goal */
+  setFreeRoam(on: boolean): void;
+  /** register a callback fired when the hero walks into a spot's radius during free-roam */
+  onSpotEnter(cb: ((spot: Spot) => void) | null): void;
   dispose(): void;
 }

@@ -1,0 +1,100 @@
+/* Procedural random event cards & open-world free-action menus with custom HK$ sliders. */
+
+.ml-dyn__badge {
+  display: inline-block;
+  margin: 2px 3px 8px;
+  padding: 4px 10px;
+  background: var(--ml-lilac);
+  color: var(--ml-ink);
+  box-shadow: var(--ml-frame2);
+  font: 800 12px/1.2 var(--ml-num);
+  letter-spacing: 0.04em;
+}
+
+.ml-dyn__title {
+  margin: 4px 3px 8px;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.3;
+}
+
+.ml-free__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.ml-free__quota {
+  display: inline-block;
+  padding: 3px 8px;
+  background: var(--ml-cream);
+  box-shadow: var(--ml-frame2);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ml-ink);
+}
+
+.ml-free__sub {
+  margin: 0 3px 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ml-muted);
+}
+
+.ml-free__slider {
+  margin: 12px 3px 6px;
+  padding: 10px 12px;
+  background: var(--ml-cream);
+  box-shadow: var(--ml-frame2);
+}
+
+.ml-free__slider-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.ml-free__slider-top strong {
+  font-family: var(--ml-num);
+  font-size: 16px;
+  color: var(--ml-ink);
+}
+
+.ml-free__slider input[type="range"] {
+  width: 100%;
+  height: 28px;
+  accent-color: var(--ml-ink);
+  cursor: pointer;
+}
+
+.ml-free__pills {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.ml-free__pill {
+  min-height: 44px;
+  margin: 0;
+  padding: 6px 4px 8px;
+  font-size: 13px;
+  font-family: var(--ml-num);
+}
+
+.ml-free__foot {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 10px;
+}
+
+.ml-free__foot .ml-btn {
+  margin: 0;
+}

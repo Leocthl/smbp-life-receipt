@@ -10,5 +10,6 @@ export const zhStage: Record<string, string> = {
   'stage.spot.clinic': '診所',
   'stage.spot.campus': '大學',
   'stage.spot.pier': '碼頭',
+  'stage.resetView': '重設視角',
   'stage.error.webgl': '呢部裝置唔支援 WebGL2，3D 場景未能開始。',
 };

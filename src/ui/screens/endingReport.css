@@ -1,0 +1,646 @@
+/* Animated MBTI-style thermal receipt report (loaded on EndingScreen). */
+
+/* Thermal printer unroll entrance */
+.ml-ending--printing .ml-receipt__inner {
+  animation: ml-receipt-unroll 420ms var(--ml-ease) both;
+}
+
+@keyframes ml-receipt-unroll {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    clip-path: inset(0 0 0% 0);
+  }
+}
+
+/* Staggered section reveal */
+.ml-ending__sec {
+  margin-bottom: 14px;
+  max-width: 100%;
+  min-width: 0;
+  animation: ml-sec-reveal 280ms var(--ml-ease) var(--sec-delay, 0ms) both;
+}
+
+@keyframes ml-sec-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Keep the angled stamp cleanly inset from the receipt edge on narrow phones */
+.ml-ending .ml-stamp {
+  top: 46px;
+  right: 18px;
+  font-size: 14px;
+  max-width: 40%;
+  padding: 4px 8px;
+  text-align: center;
+  line-height: 1.25;
+}
+
+/* Receipt header tape */
+.ml-ending__tape {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 3px 12px;
+  padding-bottom: 10px;
+  position: relative;
+}
+
+.ml-ending__tape::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: repeating-linear-gradient(90deg, var(--ml-ink) 0 6px, transparent 6px 10px);
+}
+
+.ml-ending__tape-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ml-ending__brand {
+  font: 900 12px/1.2 var(--ml-num);
+  letter-spacing: 0.08em;
+  color: var(--ml-ink);
+}
+
+.ml-ending__badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.ml-ending__pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 7px;
+  font: 800 11px/1.1 var(--ml-num);
+  letter-spacing: 0.04em;
+  color: var(--ml-ink);
+  background: var(--ml-sun);
+  box-shadow: var(--ml-frame2);
+  white-space: nowrap;
+}
+
+.ml-ending__pill--grade {
+  background: var(--ml-turquoise);
+}
+
+.ml-ending__pill--grade[data-grade="S"] {
+  background: var(--ml-sun);
+}
+
+.ml-ending__pill--grade[data-grade="A"] {
+  background: var(--ml-green);
+}
+
+.ml-ending__pill--grade[data-grade="B"] {
+  background: var(--ml-sky);
+}
+
+.ml-ending__pill--grade[data-grade="C"] {
+  background: var(--ml-lilac);
+}
+
+.ml-ending__tape-sub {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ml-ending__serial {
+  font: 700 11px/1.2 var(--ml-num);
+  color: var(--ml-muted);
+  letter-spacing: 0.05em;
+}
+
+.ml-ending__grade-note {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ml-muted);
+}
+
+/* MBTI Hero Card */
+.ml-mbti-hero {
+  margin: 0 3px 14px;
+  padding: 12px;
+  background: var(--ml-cream);
+  box-shadow: var(--ml-frame);
+}
+
+.ml-mbti-hero__eyebrow {
+  margin: 0 0 8px;
+  font: 800 11px/1.2 var(--ml-num);
+  letter-spacing: 0.1em;
+  color: var(--ml-muted);
+}
+
+.ml-mbti-tiles {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.ml-mbti-tile {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  font: 900 24px/1 var(--ml-num);
+  color: var(--ml-ink);
+  background: var(--tile-bg, var(--ml-sun));
+  box-shadow: var(--ml-frame2), inset 0 -3px 0 0 rgba(43, 58, 85, 0.18);
+  animation: ml-tile-pop 240ms var(--ml-ease) var(--tile-delay, 120ms) both;
+}
+
+.ml-mbti-tile--sm {
+  width: 32px;
+  height: 32px;
+  font-size: 16px;
+  animation: none;
+}
+
+.ml-mbti-tile[data-pole="S"] { --tile-bg: var(--ml-green); }
+.ml-mbti-tile[data-pole="E"] { --tile-bg: var(--ml-sun); }
+.ml-mbti-tile[data-pole="G"] { --tile-bg: var(--ml-turquoise); }
+.ml-mbti-tile[data-pole="V"] { --tile-bg: var(--ml-coral); }
+.ml-mbti-tile[data-pole="I"] { --tile-bg: var(--ml-sky); }
+.ml-mbti-tile[data-pole="K"] { --tile-bg: var(--ml-lilac); }
+.ml-mbti-tile[data-pole="P"] { --tile-bg: #a8e4a0; }
+.ml-mbti-tile[data-pole="A"] { --tile-bg: #ffb59f; }
+
+@keyframes ml-tile-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.ml-mbti-hero__name {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.25;
+  color: var(--ml-text);
+  overflow-wrap: break-word;
+}
+
+.ml-mbti-hero .ml-ending__label {
+  display: inline-block;
+  margin: 2px 0 8px;
+  padding: 3px 10px;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.3;
+  background: var(--ml-sun);
+  box-shadow: var(--ml-frame2);
+  animation: ml-label-pop 260ms steps(4, end) 180ms both;
+}
+
+@keyframes ml-label-pop {
+  from {
+    opacity: 0;
+    transform: scale(1.16);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.ml-mbti-hero__motto {
+  margin: 4px 0 8px;
+  padding: 6px 10px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--ml-ink);
+  background: var(--ml-paper);
+  box-shadow: inset 4px 0 0 0 var(--ml-turquoise);
+  overflow-wrap: break-word;
+}
+
+.ml-mbti-hero .ml-ending__desc {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ml-muted);
+}
+
+/* Section heading pill */
+.ml-ending__sec-head {
+  display: inline-block;
+  margin: 4px 3px 10px;
+  padding: 3px 9px;
+  background: var(--ml-sky);
+  color: var(--ml-ink);
+  box-shadow: var(--ml-frame2);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+/* 4-Axis Financial DNA Spectrum Bars */
+.ml-mbti-axes {
+  margin: 0 3px 14px;
+}
+
+.ml-mbti-axes__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ml-mbti-axis {
+  padding: 8px 10px;
+  background: var(--ml-paper);
+  box-shadow: var(--ml-frame2);
+}
+
+.ml-mbti-axis__meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.ml-mbti-axis__pole {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  color: var(--ml-muted);
+  font-weight: 700;
+  min-width: 0;
+}
+
+.ml-mbti-axis__pole--win {
+  color: var(--ml-ink);
+  font-weight: 900;
+}
+
+.ml-mbti-axis__code {
+  font-family: var(--ml-num);
+  font-weight: 900;
+}
+
+.ml-mbti-axis__pct {
+  font: 900 13px/1 var(--ml-num);
+  color: var(--ml-ink);
+  white-space: nowrap;
+}
+
+.ml-mbti-bar {
+  position: relative;
+  height: 12px;
+  background: #e9f1f8;
+  box-shadow: inset 0 0 0 2px var(--ml-ink);
+  overflow: hidden;
+}
+
+.ml-mbti-bar__mid {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: rgba(43, 58, 85, 0.35);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.ml-mbti-bar__fill {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  width: var(--fill-w, 50%);
+  background: var(--bar-color, var(--ml-turquoise));
+  animation: ml-bar-grow 520ms var(--ml-ease) var(--bar-delay, 220ms) both;
+}
+
+.ml-mbti-bar__fill--left {
+  left: 2px;
+}
+
+.ml-mbti-bar__fill--right {
+  right: 2px;
+}
+
+.ml-mbti-bar__fill[data-pole="S"] { --bar-color: var(--ml-green); }
+.ml-mbti-bar__fill[data-pole="E"] { --bar-color: var(--ml-sun); }
+.ml-mbti-bar__fill[data-pole="G"] { --bar-color: var(--ml-turquoise); }
+.ml-mbti-bar__fill[data-pole="V"] { --bar-color: var(--ml-coral); }
+.ml-mbti-bar__fill[data-pole="I"] { --bar-color: var(--ml-sky); }
+.ml-mbti-bar__fill[data-pole="K"] { --bar-color: var(--ml-lilac); }
+.ml-mbti-bar__fill[data-pole="P"] { --bar-color: var(--ml-green-deep); }
+.ml-mbti-bar__fill[data-pole="A"] { --bar-color: var(--ml-coral); }
+
+@keyframes ml-bar-grow {
+  from {
+    width: 0%;
+  }
+  to {
+    width: var(--fill-w, 50%);
+  }
+}
+
+/* Strengths & Blind Spots 2-column panel */
+.ml-mbti-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 3px;
+}
+
+@media (max-width: 379px) {
+  .ml-mbti-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ml-mbti-box {
+  padding: 10px;
+  background: var(--ml-paper);
+  box-shadow: var(--ml-frame2);
+  min-width: 0;
+}
+
+.ml-mbti-box--strengths {
+  background: color-mix(in srgb, var(--ml-green) 16%, var(--ml-paper));
+}
+
+.ml-mbti-box--blindspots {
+  background: color-mix(in srgb, var(--ml-coral) 16%, var(--ml-paper));
+}
+
+.ml-mbti-box__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--ml-ink);
+}
+
+.ml-mbti-box__mark {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  font: 900 13px/1 var(--ml-num);
+  color: var(--ml-ink);
+  background: var(--ml-green);
+  box-shadow: var(--ml-frame2);
+}
+
+.ml-mbti-box--blindspots .ml-mbti-box__mark {
+  background: var(--ml-coral);
+}
+
+.ml-mbti-box__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ml-text);
+}
+
+.ml-mbti-box__list li {
+  position: relative;
+  padding-left: 14px;
+  overflow-wrap: break-word;
+}
+
+.ml-mbti-box__list li::before {
+  content: "+";
+  position: absolute;
+  left: 0;
+  top: 0;
+  font: 900 13px/1.4 var(--ml-num);
+  color: var(--ml-up);
+}
+
+.ml-mbti-box--blindspots .ml-mbti-box__list li::before {
+  content: "!";
+  color: var(--ml-stamp);
+}
+
+/* Financial Scorecard */
+.ml-ending__scorecard {
+  margin: 0 3px 14px;
+  padding: 10px 12px 12px;
+  background: var(--ml-cream);
+  box-shadow: var(--ml-frame2);
+}
+
+.ml-ending__scorecard .ml-line--strong {
+  margin-top: 2px;
+  padding-top: 4px;
+}
+
+.ml-ending__scorecard .ml-line--strong::before {
+  display: none;
+}
+
+.ml-ending__vs-row {
+  display: flex;
+  justify-content: flex-end;
+  margin: 4px 0 10px;
+}
+
+.ml-chip {
+  display: inline-block;
+  padding: 3px 8px;
+  font: 800 12px/1.2 var(--ml-num);
+  box-shadow: var(--ml-frame2);
+  color: var(--ml-ink);
+  background: var(--ml-paper);
+}
+
+.ml-chip--up {
+  background: color-mix(in srgb, var(--ml-green) 42%, var(--ml-paper));
+  color: #1c5524;
+}
+
+.ml-chip--down {
+  background: color-mix(in srgb, var(--ml-coral) 32%, var(--ml-paper));
+  color: #8f2918;
+}
+
+.ml-chip--even {
+  background: var(--ml-sky-soft);
+}
+
+.ml-score-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.ml-score-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 7px 4px;
+  background: var(--ml-paper);
+  box-shadow: var(--ml-frame2);
+  text-align: center;
+  min-width: 0;
+}
+
+.ml-score-cell__label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ml-muted);
+  line-height: 1.2;
+}
+
+.ml-score-cell__val {
+  font: 900 14px/1.2 var(--ml-num);
+  color: var(--ml-ink);
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ml-ending__scorecard .ml-ending__goal {
+  margin: 10px 0 0;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+/* Compatible Financial Partner card inside details */
+.ml-partner-card {
+  margin: 12px 3px 10px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--ml-lilac) 18%, var(--ml-paper));
+  box-shadow: var(--ml-frame2);
+}
+
+.ml-partner-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.ml-partner-card__eyebrow {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--ml-ink);
+  letter-spacing: 0.04em;
+}
+
+.ml-partner-card__tiles {
+  display: flex;
+  gap: 5px;
+}
+
+.ml-partner-card__name {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--ml-ink);
+}
+
+.ml-partner-card__motto {
+  margin: 0 0 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ml-text);
+}
+
+.ml-partner-card__hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ml-muted);
+}
+
+/* Pixel thermal barcode footer */
+.ml-ending__barcode {
+  margin: 16px 3px 4px;
+  padding-top: 12px;
+  text-align: center;
+  position: relative;
+}
+
+.ml-ending__barcode::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  background: repeating-linear-gradient(90deg, var(--ml-ink) 0 6px, transparent 6px 10px);
+}
+
+.ml-barcode__svg {
+  display: block;
+  width: 100%;
+  max-width: 240px;
+  height: 38px;
+  margin: 0 auto 6px;
+}
+
+.ml-barcode__digits {
+  margin: 0;
+  font: 700 11px/1.2 var(--ml-num);
+  letter-spacing: 0.1em;
+  color: var(--ml-muted);
+}
+
+/* Respect reduced motion explicitly */
+@media (prefers-reduced-motion: reduce) {
+  .ml-ending--printing .ml-receipt__inner,
+  .ml-ending__sec,
+  .ml-mbti-tile,
+  .ml-mbti-hero .ml-ending__label,
+  .ml-mbti-bar__fill {
+    animation: none !important;
+    transition: none !important;
+    clip-path: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+}

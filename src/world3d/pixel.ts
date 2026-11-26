@@ -75,6 +75,7 @@ export function createPixelRenderer(container: HTMLElement): PixelRenderer {
     // kept for the stage: the fade to a colour, and the old vignette/dither knobs (the look no longer uses them)
     dither: { value: 0 }, vignette: { value: 0 }, fade: { value: 0 }, fadeColor: { value: srgb(0x2b3a55) },
     uSkyBands: { value: 1 }, uNear: { value: -200 }, uFar: { value: 400 }, uOrtho: { value: 1 }, uGap: { value: 0.9 }, uInk: { value: srgb(INK) },
+    uTime: { value: 0 }, uCursor: { value: new THREE.Vector2(0, 0) }, uYaw: { value: Math.PI / 4 }, uAgeK: { value: 0 }, uIndoor: { value: 1 },
   };
   const cleanPass = pass(CLEAN, { ...shared, map: { value: target.texture } });
   const finalPass = pass(FINAL, uniforms);

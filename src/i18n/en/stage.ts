@@ -10,5 +10,6 @@ export const enStage: Record<string, string> = {
   'stage.spot.clinic': 'Clinic',
   'stage.spot.campus': 'Campus',
   'stage.spot.pier': 'Pier',
+  'stage.resetView': 'Reset View',
   'stage.error.webgl': 'This device does not support WebGL2, so the 3D scene cannot start.',
 };

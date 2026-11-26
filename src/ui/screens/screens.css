@@ -20,6 +20,7 @@
 
 /* summary */
 .ml-summary__title { font-size: 20px; margin: 0 3px 6px; }
+.ml-summary__chapter { display: inline-block; margin: 0 3px 8px; padding: 3px 9px; background: var(--ml-sun); color: var(--ml-ink); box-shadow: var(--ml-frame2); font-size: 12px; font-weight: 800; }
 .ml-summary__sub { display: inline-block; margin: 18px 3px 8px; padding: 3px 10px; background: var(--ml-sky); color: var(--ml-ink); box-shadow: var(--ml-frame2); font-size: 13px; font-weight: 800; }
 .ml-summary__market { display: flex; align-items: center; gap: 10px; font-size: 15px; line-height: 1.45; margin: 4px 3px 12px; }
 .ml-summary .ml-btn, .ml-ending .ml-btn { margin-top: 18px; }

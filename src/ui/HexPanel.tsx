@@ -16,7 +16,17 @@ const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabi
 
 /** The decisions as DecisionTrail rows. `turn` is made unique per row because a year can hold several decisions. */
 export function trailRows(trail: Session['trail']): HexEntry[] {
-  return trail.map((e, i) => ({ turn: i + 1, age: e.age, titleKey: `ev.${e.eventId}.text`, choiceKey: `ev.${e.eventId}.${e.choiceId}`, before: e.before, after: e.after }));
+  return trail.map((e, i) => {
+    if (e.eventId.startsWith('dyn_')) {
+      const tpl = e.eventId.slice(4);
+      return { turn: i + 1, age: e.age, titleKey: `dyn.${tpl}.title`, choiceKey: `dyn.${tpl}.${e.choiceId}.why`, before: e.before, after: e.after };
+    }
+    if (e.eventId.startsWith('free_')) {
+      const spot = e.eventId.slice(5);
+      return { turn: i + 1, age: e.age, titleKey: `free.spot.${spot}.title`, choiceKey: `free.act.${e.choiceId}`, before: e.before, after: e.after };
+    }
+    return { turn: i + 1, age: e.age, titleKey: `ev.${e.eventId}.text`, choiceKey: `ev.${e.eventId}.${e.choiceId}`, before: e.before, after: e.after };
+  });
 }
 
 function Dialog({ session, onClose }: { session: Session; onClose(): void }) {

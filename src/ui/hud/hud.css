@@ -6,7 +6,9 @@
 .ml-hud > * { pointer-events: auto; }
 .ml-hud--nolang { right: 62px; }
 .ml-hud--bare { justify-content: flex-end; left: auto; right: 9px; }
-.ml-hud__main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.ml-hud__main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.ml-hud__progress { height: 4px; width: 100%; background: rgba(43, 58, 85, 0.16); box-shadow: inset 0 0 0 1px var(--ml-ink); overflow: hidden; }
+.ml-hud__progress > span { display: block; height: 100%; background: linear-gradient(90deg, var(--ml-green), var(--ml-sun)); transition: width 280ms var(--ml-ease); }
 .ml-hud__row { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .ml-hud__row .ml-hud__counter { flex: 1 1 0; max-width: 200px; }
 .ml-hud__row--meta { gap: 6px; }

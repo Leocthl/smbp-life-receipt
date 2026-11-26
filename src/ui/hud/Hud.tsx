@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { runway, netWorth } from '../../engine/finance';
+import { lifeProgressPct } from '../../engine/pacing';
 import type { GameState } from '../../engine/types';
 import { PixelIcon } from '../components/PixelIcon';
 import { ICONS, type Sprite } from '../components/sprites';
@@ -107,6 +108,9 @@ function FullHud({ state, hexSlot, onLang, onHelp, away, spotlight }: HudProps &
             <SoundButton />
             {onHelp && <HelpButton onHelp={onHelp} />}
           </div>
+        </div>
+        <div className="ml-hud__progress" aria-hidden="true">
+          <span style={{ width: `${lifeProgressPct(state.age)}%` }} />
         </div>
       </div>
     </header>

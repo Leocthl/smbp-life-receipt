@@ -14,6 +14,13 @@ export function floorAndWalls(ctx: Ctx, x1: number): void {
   box(b, -3.125, 0, 0.25, 6.5, 0, ROOM.h, WALL_SIDE, { density: 40, top: 0xfff6dc, flat: true, jitter: 0.004 });
   panel(b, 'z', [cx, 0.14, -2.98], w, 0.28, 0xfff6dc, { density: 60 });
   panel(b, 'x', [-2.98, 0.14, 0], 6, 0.28, 0xfff6dc, { density: 60 });
+  // Finished dollhouse exterior backing + plinth trim for 360-degree camera orbit
+  panel(b, 'z', [cx - 0.06, ROOM.h / 2, -3.26], w + 0.25, ROOM.h, 0xc9d3e6, { density: 36, shade: 0.88 });
+  panel(b, 'x', [-3.26, ROOM.h / 2, 0], 6.5, ROOM.h, 0x9aa8c4, { density: 36, shade: 0.85 });
+  panel(b, 'z', [cx - 0.06, 0.16, -3.27], w + 0.28, 0.32, 0x4a5578, { density: 48 });
+  panel(b, 'x', [-3.27, 0.16, 0], 6.55, 0.32, 0x4a5578, { density: 48 });
+  panel(b, 'z', [cx, -0.2, 3.1], w + 0.2, 0.4, 0x6f4a32, { density: 34, shade: 0.82 });
+  panel(b, 'x', [x1 + 0.1, -0.2, 0], 6.2, 0.4, 0x6f4a32, { density: 34, shade: 0.78 });
 }
 
 /** A window in the back wall at x = cx: sky, sun, clouds or rain, and a skyline, so the market's mood shows in the room. */
