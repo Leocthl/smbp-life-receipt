@@ -2,6 +2,9 @@ import * as THREE from 'three';
 import type { StageApi } from '../contracts';
 import { createGaussianBuilder, type GaussianMesh } from '../gaussian';
 
+/** The view height anchored effects are designed for; they are scaled with the camera so they look the same at any zoom. */
+export const REF_VIEW = 18;
+
 export type Builder = ReturnType<typeof createGaussianBuilder>;
 
 /** One splat mesh the cutscene owns. Animate `node`; `root` is placed by you (world props) or by the set (anchored). */
@@ -69,7 +72,11 @@ export function createPropSet(stage: StageApi): PropSet {
       if (u) vp.copy(u);
       cam.getWorldDirection(dir);
       for (const p of props) {
-        if (p.anchored) { p.root.position.copy(target).addScaledVector(dir, p.depth); p.root.quaternion.copy(cam.quaternion); }
+        if (p.anchored) {
+          p.root.position.copy(target).addScaledVector(dir, p.depth);
+          p.root.quaternion.copy(cam.quaternion);
+          p.root.scale.setScalar((cam.top - cam.bottom) / REF_VIEW);
+        }
         p.root.updateMatrixWorld(true);
         p.g.uniforms.uTime.value = t;
         p.g.uniforms.uViewport.value.copy(vp);

@@ -19,6 +19,7 @@ uniform float uReveal;
 uniform float uSize;
 uniform float uWind;
 uniform float uOpacity;
+uniform float uBias;   // draw this mesh this many view units nearer than it is (the hero stays visible behind stalls and trees)
 uniform vec3 uLight;
 in float aIndex;
 out vec2 vPos;
@@ -89,6 +90,7 @@ void main() {
   int flags = int(t2.w + 0.5);
   float bias = 0.0;
   if ((flags & 8) != 0) bias = ortho ? 0.3 * abs(projectionMatrix[2][2]) : -0.0008 * clip.w; // detail sits just in front of its surface
+  if (ortho) bias += uBias * abs(projectionMatrix[2][2]);
   gl_Position = clip + vec4(offset / uViewport * 2.0 * clip.w, ortho ? -bias : bias, 0.0);
   vPos = position.xy * k;
   // position of this fragment relative to the splat centre, in the mesh's own space (for the smooth blob normal)

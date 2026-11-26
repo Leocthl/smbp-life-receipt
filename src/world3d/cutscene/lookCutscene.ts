@@ -9,7 +9,7 @@ import { asLabel } from './logic';
 import { playYearEnd } from './yearEnd';
 
 // ?look=yearend&regime=bull|crash|correction|recovery|normal   ?look=ending&e=<label>&weak=<quality>&strong=<quality>&goal=1
-// Common: &lang=en &seed=3 &at=<seconds> (jump there and hold, for screenshots).
+// Common: &lang=en &seed=3 &at=<seconds> (jump there and hold, for screenshots) &scope=room|home|block|district|city.
 const REGIMES: readonly Regime[] = ['bull', 'normal', 'correction', 'crash', 'recovery'];
 const isQuality = (v: string | null): v is Quality => v !== null && (QUALITIES as readonly string[]).includes(v);
 
@@ -29,8 +29,11 @@ export async function mountLookCutscene(container: HTMLElement, kind: 'yearend' 
   const q = fakeQualities(weak, strong);
   const regimeParam = params.get('regime');
   const regime = REGIMES.find((r) => r === regimeParam) ?? 'normal';
-  const stage = createStage(container, { ...base, regime, age: kind === 'ending' ? 65 : 30 }, seed, { lang });
+  const scopes = ['room', 'home', 'block', 'district', 'city'] as const;
+  const scope = scopes.find((s) => s === params.get('scope')) ?? (kind === 'ending' ? 'city' : base.scope); // the real ending plays in the city
+  const stage = createStage(container, { ...base, regime, scope, age: kind === 'ending' ? 65 : 30 }, seed, { lang });
   document.title = 'ready';
+  await stage.animate(() => true); // one frame, so the hero stands where the stage put it
   if (kind === 'yearend') {
     stage.setWorld({ ...stage.world(), regime });
     await playYearEnd(stage, { age: 31, regime, before: q, after: { ...q, wealth: q.wealth + 6, safety: q.safety - 4, joy: q.joy + 3 }, lang }, { at });

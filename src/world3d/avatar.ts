@@ -13,6 +13,8 @@ type B = ReturnType<typeof createGaussianBuilder>;
 
 const S = 1, SP = 0;
 const COAL = 0xff8a6b, CREAM = 0xfff6dc;
+/** The hero is drawn this many view units nearer than it stands, so a stall or a tree in front never hides who you are (and the pixel pass inks round it). */
+export const HERO_BIAS = 4.5;
 
 const outfit = (l: AvatarLook): Outfit => ({ top: l.blazer ?? l.top, pants: l.pants, shoes: l.shoes, hair: l.hair, skin: l.skin });
 
@@ -81,6 +83,7 @@ export const buildAvatar: BuildAvatar = (d, seed) => {
     attach(armR.pivot, cane, 0, -0.62);
     parts.push({ mesh: cane });
   }
+  parts.forEach((p) => { p.mesh.uniforms.uBias.value = HERO_BIAS; });
   let walking = 0, target = 0, phase = 0;
   const lean = l.slouch, blinkAt = (seed % 7) * 0.3, canBlink = !l.shades;
   return {

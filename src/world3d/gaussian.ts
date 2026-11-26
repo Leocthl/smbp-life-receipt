@@ -36,7 +36,7 @@ export interface GaussianMesh {
   mesh: THREE.Mesh;
   uniforms: {
     uTime: THREE.IUniform<number>; uReveal: THREE.IUniform<number>; uSize: THREE.IUniform<number>; uWind: THREE.IUniform<number>;
-    uTint: THREE.IUniform<THREE.Color>; uSat: THREE.IUniform<number>; uGlow: THREE.IUniform<number>; uOpacity: THREE.IUniform<number>;
+    uTint: THREE.IUniform<THREE.Color>; uSat: THREE.IUniform<number>; uGlow: THREE.IUniform<number>; uOpacity: THREE.IUniform<number>; uBias: THREE.IUniform<number>;
     uViewport: THREE.IUniform<THREE.Vector2>;
   };
   count: number;
@@ -185,7 +185,7 @@ function buildMesh(items: GaussianInput[]): GaussianMesh {
   const uniforms = {
     uData: { value: texture }, uWidth: { value: TEX_WIDTH }, uViewport: { value: new THREE.Vector2(320, 200) }, uRamps: { value: rampTexture() },
     uTime: { value: 0 }, uReveal: { value: 1 }, uSize: { value: 1 }, uWind: { value: 0 },
-    uTint: { value: new THREE.Color(1, 1, 1) }, uSat: { value: 1 }, uGlow: { value: 0 }, uOpacity: { value: 1 },
+    uTint: { value: new THREE.Color(1, 1, 1) }, uSat: { value: 1 }, uGlow: { value: 0 }, uOpacity: { value: 1 }, uBias: { value: 0 },
     uLight: { value: LIGHT.clone() }, uLo: { value: 0.3 }, uHi: { value: 0.7 },
   };
   const material = makeMaterial(uniforms, false), softMaterial = makeMaterial(uniforms, true);

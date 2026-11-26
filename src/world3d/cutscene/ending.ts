@@ -7,6 +7,7 @@ import { type Fx, type Ctx, BREAKTHROUGH, WEATHER, sweepLight } from './endingFx
 import { FLAVOURS } from './flavours';
 import { C, ball } from './fx';
 import { asLabel, strongest, variant, weakest } from './logic';
+import { aim, cutBox, openingShot, type Shot } from './frame';
 import { buildCity, buildLand, buildPeople, buildSea } from './lookout';
 import { NEUTRAL, bump, grade, lerp, mixGrade, setSky, skyAt, smooth, type Grade } from './look';
 import { createOverlay, el, type Overlay } from './overlay';
@@ -30,7 +31,10 @@ const T = { turn: 9.8, act2End: 19.4, cutOut: 19.4, hill: 20.8, line3: 22, card:
 const HILL_AT: [number, number, number] = [-140, 0, 0]; // a long way along the camera's right axis, so the town never shows
 const HILL_YAW = Math.PI;
 const BRIGHT: Grade = { sat: 1.15, tint: [1.05, 1.02, 0.92] };
-const NIGHT: Grade = { sat: 0.9, tint: [0.55, 0.6, 0.95] };
+const NIGHT: Grade = { sat: 0.95, tint: [0.72, 0.78, 1] };
+const DUSK = 0x3f5a94; // the night sky of the moonlight ending: clear blue, never near-black
+const SKIP_ROW = 76;
+const SUBTITLE = 150; // the narration box and its margin at the bottom
 
 function buildTitle(info: EndingInfo, label: string): HTMLElement {
   const card = el('div', 'ml-cut-card');
@@ -47,9 +51,9 @@ function washAt(c: number): number {
 }
 
 function actSky(c: number, weatherSky: number, nightStart: boolean, base: number): number {
-  if (c >= T.hill - 1) return skyAt([[T.hill - 1, C.slate], [T.hill + 0.8, 0xb9a7ff], [T.hill + 2.5, C.rose], [T.hill + 5, C.peach], [T.hill + 7, C.pale], [T.hill + 9.5, C.sky]], c);
+  if (c >= T.hill - 1) return skyAt([[T.hill - 1, 0x6f86ae], [T.hill + 0.8, 0xb9a7ff], [T.hill + 2.5, C.rose], [T.hill + 5, C.peach], [T.hill + 7, C.pale], [T.hill + 9.5, C.sky]], c);
   const keys: Array<readonly [number, number]> = nightStart
-    ? [[0, base], [1.5, weatherSky], [T.turn, weatherSky], [T.turn + 1, C.ink], [14, C.ink], [16.5, C.peach], [18.5, C.sky]]
+    ? [[0, base], [1.5, weatherSky], [T.turn, weatherSky], [T.turn + 1, DUSK], [14, DUSK], [16.5, C.peach], [18.5, C.sky]]
     : [[0, base], [1.5, weatherSky], [T.turn, weatherSky], [12, C.peach], [14.5, C.sky]];
   return skyAt(keys, c);
 }
@@ -88,18 +92,27 @@ function buildHill(ps: ReturnType<typeof createPropSet>, info: EndingInfo, area:
   };
 }
 
-function frameCamera(c: number, st: { yaw: number; pitch: number; viewHeight: number }, target: THREE.Vector3, o: { pos: THREE.Vector3; yaw0: number; pitch0: number; zoom: number }) {
+interface CamPlan { shot: Shot; yaw0: number; pitch0: number; zoom: number; box: ReturnType<typeof cutBox>; ins: { top: number; bottom: number; right: number }; cardH: number }
+
+/** On a tall phone the hilltop needs a little more height to keep the people, the town and the harbour in one picture. */
+const hillHeight = (box: { w: number; h: number }) => Math.max(1, 0.55 / Math.max(0.5, box.w / box.h));
+const HILL_CENTRE = new THREE.Vector3(HILL_AT[0], 1.7, HILL_AT[2] + 2.8);
+
+function frameCamera(c: number, st: { yaw: number; pitch: number; viewHeight: number }, target: THREE.Vector3, o: CamPlan) {
   if (c >= T.hill - 0.8) {
     st.yaw = HILL_YAW + 0.1 * Math.sin(c * 0.25);
     st.pitch = 0.3;
-    st.viewHeight = lerp(23, 19, smooth((c - T.hill) / 10));
-    target.set(HILL_AT[0], 2.2, HILL_AT[2] + 2.5);
+    st.viewHeight = lerp(20, 16.5, smooth((c - T.hill) / 10)) * hillHeight(o.box);
+    // the title card rises over the bottom of the picture: slide the view up so the people stay above it
+    const bottom = lerp(o.ins.bottom, o.cardH, smooth((c - (T.card - 1)) / 1.5));
+    aim(target, HILL_CENTRE, st.viewHeight, st.yaw, st.pitch, o.box, { ...o.ins, bottom });
     return;
   }
-  st.yaw = o.yaw0 + 0.55 * smooth(c / T.act2End);
+  st.yaw = o.yaw0 + 0.4 * smooth(c / T.act2End);
   st.pitch = o.pitch0;
-  st.viewHeight = c < T.turn ? lerp(o.zoom * 1.1, o.zoom, smooth(c / T.turn)) : lerp(o.zoom, 16, smooth((c - T.turn) / 4));
-  target.set(o.pos.x, 1.0, o.pos.z);
+  const vh = o.shot.viewHeight * o.zoom;
+  st.viewHeight = c < T.turn ? lerp(vh * 1.08, vh, smooth(c / T.turn)) : lerp(vh, vh * 0.86, smooth((c - T.turn) / 4));
+  aim(target, o.shot.centre, st.viewHeight, st.yaw, st.pitch, o.box, o.ins);
 }
 
 /**
@@ -117,7 +130,7 @@ export async function playEnding(stage: StageApi, info: EndingInfo, opts: { at?:
   const bg = stage.scene.background;
   const baseSky = bg instanceof THREE.Color ? bg.getHex() : C.sky;
   const d0 = stage.world();
-  const area = viewArea(18);
+  const area = viewArea();
   const ps = createPropSet(stage);
   const ov = createOverlay({ mode: 'hold', skipText: ct(info.lang, 'cutscene.skip'), hint: ct(info.lang, 'cutscene.hold') });
   const title = buildTitle(info, label);
@@ -126,6 +139,8 @@ export async function playEnding(stage: StageApi, info: EndingInfo, opts: { at?:
   hold(true);
   try {
     const ctx: Ctx = { ps, area, pos: stage.avatar().group.position };
+    const box = cutBox(), ins = { top: SKIP_ROW, bottom: SUBTITLE, right: 0 };
+    const plan: CamPlan = { shot: openingShot(stage, ctx.pos, saved.viewHeight, ins, saved.yaw, saved.pitch), yaw0: saved.yaw, pitch0: saved.pitch, zoom: weather.zoom ?? 1, box, ins, cardH: title.offsetHeight + 38 };
     const fx: Fx[] = [WEATHER[weak].make(ctx), BREAKTHROUGH[strong](ctx), ...(flavour.act2 ? [flavour.act2(ctx)] : [])];
     const sweep = sweepLight(ps, area);
     const hill = buildHill(ps, info, area, { partner: d0.partner, kids: d0.kids }, label);
@@ -134,7 +149,7 @@ export async function playEnding(stage: StageApi, info: EndingInfo, opts: { at?:
       cues(c);
       setSky(stage.scene, actSky(c, weather.sky, Boolean(flavour.nightStart), baseSky));
       grade(stage.scene, actGrade(c, weather.grade, Boolean(flavour.nightStart)));
-      frameCamera(c, state, target, { pos: ctx.pos, yaw0: saved.yaw, pitch0: saved.pitch, zoom: weather.zoom ?? 15 });
+      frameCamera(c, state, target, plan);
       fx[0].set(bump(c, 0.6, 2.2, T.turn - 0.6, T.turn + 1), c);
       fx.slice(1).forEach((f) => f.set(bump(c, T.turn + 0.2, T.turn + 2.2, T.act2End - 0.8, T.act2End + 0.6), c));
       sweep.set(bump(c, T.turn - 0.4, T.turn + 0.8, T.turn + 2.2, T.turn + 3.2), c - T.turn);
