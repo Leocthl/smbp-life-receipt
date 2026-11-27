@@ -2,7 +2,7 @@
 
 > **SMBP FinHack — Finance Track Submission**
 >
-> - **Live Demo:** https://hklife.vercel.app
+> - **Live Demo:** https://lifereceipt-hk.vercel.app
 > - **GitHub Repo:** https://github.com/Leocthl/smbp-life-receipt
 > - **Zero-Server Static SPA:** Pure client-side React + Vite + WebGL2 (`$0` backend cost, **0 PII stored**)
 
@@ -29,7 +29,7 @@ Educational only, not financial advice. Bilingual **香港粵語 (default)** and
 - **108 BPM WebAudio Soundtrack & Procedural SFX (`src/ui/audio/`):**
   - Zero-asset WebAudio lookahead scheduler (`ambient.ts`) playing a 108 BPM 8-bar city-pop Rhodes/kalimba groove alongside rate-limited procedural SFX (`sfx.ts` — thermal printer zip, marimba clicks, ka-ching chimes, footsteps, fanfares) with instant mute toggle.
 - **$0-Server Static SPA Architecture (0 PII Stored):**
-  - Runs 100% in the browser as static assets on Vercel (`https://hklife.vercel.app`)—no user accounts, no backend API, no database, no cookies/tracking, and zero personally identifiable information stored or transmitted.
+  - Runs 100% in the browser as static assets on Vercel (`https://lifereceipt-hk.vercel.app`)—no user accounts, no backend API, no database, no cookies/tracking, and zero personally identifiable information stored or transmitted.
 - **10,000-Life Monte Carlo Balance Testing (`BALANCE_REPORT.md`):**
   - Automated Pareto dominance verification across 8 bot play styles × 10,000 seeded lives (`80,000` simulated lives total). Current result: **PASS — no dominant strategy** (`indexer` leads median net worth, `saver` leads bankruptcy avoidance, `spender` leads happiness & relationships, and all 8 ending labels are reachable).
 
